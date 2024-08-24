@@ -1,0 +1,26 @@
+# Directories
+/.tmp/
+/.local/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Vim
+*.swp
+.*.swp
+:*
+
+# Emacs
+*~
+.*~
+
+# dotenv
+.env
+
+# Go
+coverage.txt*
+coverage.html
+go.work.sum
