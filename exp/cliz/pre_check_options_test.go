@@ -1,0 +1,108 @@
+package cliz
+
+import (
+	"errors"
+	"testing"
+)
+
+func TestCommand_checkOptions(t *testing.T) {
+	t.Parallel()
+	t.Run("success,", func(t *testing.T) {
+		t.Parallel()
+		c := &Command{
+			Name: "main-cli",
+			SubCommands: []*Command{
+				{
+					Name: "sub-cmd",
+					Options: []Option{
+						&StringOption{
+							Name: "foo",
+						},
+					},
+				},
+			},
+		}
+
+		if err := c.preCheckOptions(); err != nil {
+			t.Fatalf("❌: %+v", err)
+		}
+	})
+
+	t.Run("failure,ErrDuplicateOptionName,name", func(t *testing.T) {
+		t.Parallel()
+		c := &Command{
+			Name: "main-cli",
+			SubCommands: []*Command{
+				{
+					Name: "sub-cmd",
+					Options: []Option{
+						&StringOption{
+							Name: "foo",
+						},
+						&StringOption{
+							Name: "foo",
+						},
+					},
+				},
+			},
+		}
+
+		if err := c.preCheckOptions(); !errors.Is(err, ErrDuplicateOption) {
+			t.Fatalf("❌: err != ErrDuplicateOptionName: %+v", err)
+		}
+	})
+
+	t.Run("failure,ErrDuplicateOptionName,short", func(t *testing.T) {
+		t.Parallel()
+		c := &Command{
+			Name: "main-cli",
+			SubCommands: []*Command{
+				{
+					Name: "sub-cmd",
+					Options: []Option{
+						&StringOption{
+							Aliases: []string{"f"},
+						},
+						&StringOption{
+							Aliases: []string{"f"},
+						},
+					},
+				},
+			},
+		}
+
+		{
+			err := c.preCheckOptions()
+			if !errors.Is(err, ErrDuplicateOption) {
+				t.Fatalf("❌: err != ErrDuplicateOptionName: %+v", err)
+			}
+		}
+	})
+
+	t.Run("failure,ErrDuplicateOptionName,environment", func(t *testing.T) {
+		t.Parallel()
+		c := &Command{
+			Name: "main-cli",
+			SubCommands: []*Command{
+				{
+					Name: "sub-cmd",
+					Options: []Option{
+						&StringOption{
+							Environment: "FOO",
+						},
+						&StringOption{
+							Environment: "FOO",
+						},
+					},
+				},
+			},
+		}
+
+		{
+			err := c.preCheckOptions()
+			if !errors.Is(err, ErrDuplicateOption) {
+				t.Fatalf("❌: err != ErrDuplicateOptionName: %+v", err)
+			}
+		}
+	})
+}
