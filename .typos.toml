@@ -1,0 +1,11 @@
+[files]
+extend-exclude = [
+  ".tmp",
+  ".typos.toml",
+  "go.mod",
+  "go.sum",
+]
+
+[default.extend-words]
+# 偽陽性の場合は, 以下のように単語を辞書に追加する
+# NotTypoWord = "NotTypoWord"
