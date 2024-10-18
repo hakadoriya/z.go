@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+__cliz_completion_bash() {
+  # If the first word is "source", don't attempt to complete
+  if [[ "${COMP_WORDS[0]}" == "source" ]]; then
+    return
+  fi
+
+  # If the previous word is an option, don't attempt to complete
+  if [[ "${COMP_WORDS[COMP_CWORD-1]}" == -* ]]; then
+    return
+  fi
+
+  COMPREPLY=($(compgen -W "$(eval "${COMP_WORDS[*]:0:$COMP_CWORD} {{.GenerateBashCompletionSubCommandName}}")" -- "${COMP_WORDS[COMP_CWORD]}"))
+}
+
+complete -o bashdefault -o default -o nospace -F __cliz_completion_bash {{.RootCommandName}}
