@@ -47,7 +47,7 @@ lint:  ## Run secretlint, go mod tidy, golangci-lint
 	# gitleaks ref. https://github.com/gitleaks/gitleaks
 	gitleaks detect --source . -v
 	# tidy
-	go-mod-tidy-all
+	go-mod-all tidy
 	# golangci-lint
 	# ref. https://golangci-lint.run/usage/linters/
 	golangci-lint run -c "${REPO_ROOT}/.golangci.yml" --fix --sort-results --verbose --timeout=5m
