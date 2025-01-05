@@ -1,3 +1,3 @@
 module github.com/hakadoriya/z.go
 
-go 1.22
+go 1.23.4

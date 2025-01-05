@@ -1,5 +1,5 @@
 module github.com/hakadoriya/z.go/grpcz
 
-go 1.22
+go 1.23.4
 
-require google.golang.org/grpc v1.66.0
+require google.golang.org/grpc v1.69.2
