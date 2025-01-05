@@ -112,7 +112,7 @@ jobs:
             ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-${{ hashFiles('**/go.sum') }}-
             ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-
             ${{ runner.os }}-go-
-      - uses: golangci/golangci-lint-action@v6.1.0 # ref. https://github.com/golangci/golangci-lint-action#how-to-use
+      - uses: golangci/golangci-lint-action@v6.1.1 # ref. https://github.com/golangci/golangci-lint-action#how-to-use
         with:
           working-directory: ${{ env.WORKDIR }}
           args: --timeout=600s
