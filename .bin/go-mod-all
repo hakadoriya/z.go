@@ -26,6 +26,15 @@ LogshRun() { _dlm="####R#E#C#D#E#L#I#M#I#T#E#R####" && _all=$({ _out=$("$@") && 
 __main__() {
   cd "${REPO_ROOT:?}" || return $? # cd repo root
 
+  case "${1:-}" in
+    "tidy")
+      go_command=(go mod tidy)
+      ;;
+    "update")
+      go_command=(go get -u ./...)
+      ;;
+  esac
+
   targets=$(
     find "${REPO_ROOT:?}" -name go.mod -print |    # find go.mod
       sed "s@${REPO_ROOT:?}/@@g; s@/*go\.mod@@g; s@^@./@;" | # trim repo root path
@@ -34,7 +43,8 @@ __main__() {
   LogshInfo "targets:" "$(tr '\n' ' ' <<< "${targets:-none}")"
   if [ -n "${targets:-}" ]; then
     while read -r mod; do
-      LogshExec bash -c "cd ${REPO_ROOT:?}/${mod:?} && go mod tidy"
+      mod_path=$(readlink -f -- "${REPO_ROOT:?}/${mod:?}")
+      LogshExec bash -c "cd ${mod_path:?} && ${go_command[*]}"
     done <<<"${targets:?}"
   fi
 }

@@ -125,7 +125,7 @@ jobs:
         working-directory: ${{ env.WORKDIR }}
         shell: bash
         run: |
-          direnv exec . go-mod-tidy-all
+          direnv exec . go-mod-all tidy
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           DIFF_FILES=$(git diff --name-only)
