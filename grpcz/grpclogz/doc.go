@@ -1,2 +1,2 @@
-// grpclogz package provides a set of utilities for Go google.golang.org/grpc/grpclog package.
+// grpclogz package provides logging utilities specifically designed for gRPC operations, integrating with Google's gRPC logging system for enhanced logging capabilities.
 package grpclogz

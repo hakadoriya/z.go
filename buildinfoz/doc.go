@@ -1,2 +1,2 @@
-// buildinfoz package is a simple package that provides the build information of the Go binary.
+// buildinfoz package provides functionality to access and manage build information of Go binaries, including version, commit hash, build time and other compilation-time metadata.
 package buildinfoz

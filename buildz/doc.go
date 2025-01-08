@@ -1,2 +1,2 @@
-// buildz package provides utilities for go build.
+// buildz package provides utilities for Go build process management, including package import path resolution and build configuration handling.
 package buildz

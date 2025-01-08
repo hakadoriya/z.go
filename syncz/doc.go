@@ -1,2 +1,2 @@
-// package syncz provides a some utilities for sync package.
+// syncz package provides utilities for synchronization primitives and concurrent programming patterns, extending Go's sync package functionality.
 package syncz

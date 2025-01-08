@@ -1,2 +1,2 @@
-// errorz package provides a function to generate functions that creates errorf function with a stack trace, and utilities for error handling.
+// errorz package provides enhanced error handling utilities, including stack trace generation, error wrapping, and custom error type creation with detailed error context.
 package errorz

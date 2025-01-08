@@ -26,32 +26,32 @@ go get -u github.com/hakadoriya/z.go
 
 | Package | Summary |
 |:--------|:--------|
-| [`buildinfoz`](./buildinfoz) | buildinfoz package is a simple package that provides the build information of the Go binary. |
-| [`buildz`](./buildz) | buildz package provides utilities for go build. |
-| [`bytez`](./bytez) | bytez package provides utilities for byte slices. |
-| [`cliz`](./cliz) | cliz package provides a set of utilities for building command-line interfaces. |
-| [`contextz`](./contextz) | contextz package provides a set of utilities for working with context.Context. |
-| [`databasez/sqlz`](./databasez/sqlz) | sqlz package provides a set of utilities for Go standard database/sql package. |
-| [`diffz`](./diffz) | package diffz provides a some diff utilities. |
-| [`envz`](./envz) | encz package provides a simple way to manage environment variables with tagged struct fields. |
-| [`errorz`](./errorz) | errorz package provides a function to generate functions that creates errorf function with a stack trace, and utilities for error handling. |
-| [`genericz`](./genericz) | genericz package provides a set of utilities for generics. |
-| [`grpcz/grpclogz`](./grpcz/grpclogz) | grpclogz package provides a set of utilities for Go google.golang.org/grpc/grpclog package. |
-| [`logz/slogz`](./logz/slogz) | package slogz provides a some utilities for log/slog. |
-| [`mapz`](./mapz) | package mapz provides a some map utilities. |
-| [`mustz`](./mustz) | mustz package provides a set of functions that panics if error is not nil. |
-| [`otelz`](./otelz) | package otelz provides a some utilities for OpenTelemetry. |
+| [`buildinfoz`](./buildinfoz) | buildinfoz package provides functionality to access and manage build information of Go binaries, including version, commit hash, build time and other compilation-time metadata. |
+| [`buildz`](./buildz) | buildz package provides utilities for Go build process management, including package import path resolution and build configuration handling. |
+| [`bytez`](./bytez) | bytez package provides a comprehensive set of utilities for byte slice manipulation in Go, offering functions for conversion, comparison, transformation and efficient byte operations. |
+| [`cliz`](./cliz) | cliz package provides a framework for building command-line interfaces in Go, featuring command hierarchy, option parsing, bash/zsh completion support, and standardized CLI structure management. |
+| [`contextz`](./contextz) | contextz package provides utilities for working with context.Context, including context creation, manipulation, and management of context values and cancellation. |
+| [`databasez/sqlz`](./databasez/sqlz) | sqlz package provides enhanced utilities for Go's database/sql package, offering simplified database operations, connection management, and query execution helpers. |
+| [`diffz`](./diffz) | diffz package provides utilities for comparing and finding differences between data structures, supporting various comparison algorithms and diff output formats. |
+| [`envz`](./envz) | envz package provides a structured approach to environment variable management, featuring struct tag-based configuration and automatic environment variable parsing and validation. |
+| [`errorz`](./errorz) | errorz package provides enhanced error handling utilities, including stack trace generation, error wrapping, and custom error type creation with detailed error context. |
+| [`genericz`](./genericz) | genericz package provides utility functions and types for working with Go generics, offering common generic algorithms and data structure operations. |
+| [`grpcz/grpclogz`](./grpcz/grpclogz) | grpclogz package provides logging utilities specifically designed for gRPC operations, integrating with Google's gRPC logging system for enhanced logging capabilities. |
+| [`logz/slogz`](./logz/slogz) | slogz package provides utilities for working with Go's log/slog package, offering enhanced logging functionality, custom formatters, and logging middleware. |
+| [`mapz`](./mapz) | mapz package provides utilities for map operations in Go, including safe concurrent access, map manipulation, and helper functions for common map operations. |
+| [`mustz`](./mustz) | mustz package provides utility functions that convert error-returning functions into panic-on-error versions, useful for situations where errors are not expected or should be fatal. |
+| [`otelz`](./otelz) | otelz package provides utilities for OpenTelemetry integration in Go applications, offering simplified setup for tracing, metrics, and observability with automatic exporters. |
 | [`otelz/tracez`](./otelz/tracez) | package tracez provides a some utilities for OpenTelemetry Trace. |
-| [`pathz/filepathz`](./pathz/filepathz) | package filepathz provides a some path and path/filepath utilities. |
-| [`reflectz`](./reflectz) | package reflectz provides a some utilities for Go reflect package. |
-| [`retryz`](./retryz) | package retryz provides a some utilities for retry. |
-| [`runtimez`](./runtimez) | package runtimez provides a some utilities for runtime package. |
-| [`slicez`](./slicez) | package slicez provides a some utilities for slice. |
-| [`stringz`](./stringz) | package stringz provides a some utilities for string type. |
-| [`syncz`](./syncz) | package syncz provides a some utilities for sync package. |
+| [`pathz/filepathz`](./pathz/filepathz) | filepathz package provides utilities for file path manipulation and filesystem operations, extending Go's path/filepath package with additional functionality. |
+| [`reflectz`](./reflectz) | reflectz package provides utilities for working with Go's reflect package, offering simplified reflection operations and type manipulation functions. |
+| [`retryz`](./retryz) | retryz package provides utilities for implementing retry mechanisms, including configurable retry strategies, backoff algorithms, and error handling for retryable operations. |
+| [`runtimez`](./runtimez) | runtimez package provides utilities for runtime information and manipulation, including function name resolution, stack trace analysis, and runtime debugging helpers. |
+| [`slicez`](./slicez) | slicez package provides utilities for slice operations in Go, offering functions for manipulation, transformation, and common slice algorithms. |
+| [`stringz`](./stringz) | stringz package provides utilities for string manipulation and processing, offering enhanced string operations beyond the standard library's capabilities. |
+| [`syncz`](./syncz) | syncz package provides utilities for synchronization primitives and concurrent programming patterns, extending Go's sync package functionality. |
 | [`testingz/assertz`](./testingz/assertz) | assertz package is a wrapper around testing.TB to provide more helpful functions for testing. assertz.* functions are similar to (testing.TB).Error functions. |
-| [`testingz`](./testingz) | package testingz provides a some utilities for testing package. |
+| [`testingz`](./testingz) | testingz package provides enhanced testing utilities for Go, including custom assertions, test helpers, and mock implementations for common interfaces like io.Reader and io.Writer. |
 | [`testingz/requirez`](./testingz/requirez) | requirez package is a wrapper around testing.TB to provide more helpful functions for testing. requirez.* functions are similar to (testing.TB).Fatal functions. |
-| [`xz/toolz/importz`](./xz/toolz/importz) | package importz provides a some utilities for golang.org/x/tools/imports package. |
+| [`xz/toolz/importz`](./xz/toolz/importz) | importz package provides utilities for managing Go imports using golang.org/x/tools/imports, offering functions for import formatting and organization. |
 
 <!-- CODE GENERATED BY UPDATE-README. DO NOT EDIT. GO PACKAGE CONTENT END -->
