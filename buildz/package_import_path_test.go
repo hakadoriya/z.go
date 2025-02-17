@@ -65,8 +65,8 @@ func TestFindPackageImportPath(t *testing.T) {
 		t.Parallel()
 
 		actual, err := FindPackageImportPath("/")
-		if !errors.Is(err, ErrReachedRootDirectory) {
-			t.Errorf("❌: !errors.Is(err, ErrReachedRootDirectory): %+v", err)
+		if !errors.Is(err, ErrPathIsNotInGOPATH) {
+			t.Errorf("❌: !errors.Is(err, ErrPathIsNotInGOPATH): %+v", err)
 		}
 
 		expected := ""
