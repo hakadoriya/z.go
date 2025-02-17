@@ -194,8 +194,6 @@ argsLoop:
 				subcmd.allExecutedCommandNames = c.allExecutedCommandNames
 				defer func() {
 					// NOTE: Propagate the updated subcmd.ctx to c.ctx in subcmd processing.
-					//
-					//nolint:fatcontext
 					c.ctx = subcmd.ctx
 					c.allExecutedCommandNames = subcmd.allExecutedCommandNames
 				}()
