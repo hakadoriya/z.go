@@ -29,6 +29,20 @@ defaults:
     shell: bash
 
 jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DEBUG
+        shell: bash
+        run: |
+          cat <<'DEBUG_DOC'
+          == DEBUG =======================================================
+          github.ref: ${{ github.ref }}
+          github.event_name: ${{ github.event_name }}
+          -- toJSON(github) ----------------------------------------------
+          ${{ toJSON(github) }}
+          ================================================================
+          DEBUG_DOC
   paths-filter:
     runs-on: ubuntu-latest
     outputs:
@@ -41,38 +55,26 @@ jobs:
             # If any of these regular expressions match, it returns skip=false
             # This setting takes precedence over paths-ignore
             ^.github/workflows/go-lint.yml$
-            ^.*go\.[a-z\.]+$
+            ^(.*/)?go\.[a-z\.]+$
             ^.*\.go$
   # > Note: A job that is skipped will report its status as "Success".
   # > It will not prevent a pull request from merging, even if it is a required check.
   # ref. https://docs.github.com/en/actions/using-jobs/using-conditions-to-control-job-execution#overview
   go-lint:
-    runs-on: ubuntu-latest
     needs: paths-filter
     if: ${{ needs.paths-filter.outputs.skip != 'true' }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: DEBUG
-        shell: bash
-        run: |
-          cat <<'DEBUG_DOC'
-          == DEBUG =======================================================
-          github.ref: ${{ github.ref }}
-          github.event_name: ${{ github.event_name }}
-          -- toJSON(github.event.inputs) ---------------------------------
-          ${{ toJSON(github.event.inputs) }}
-          -- toJSON(github) ----------------------------------------------
-          ${{ toJSON(github) }}
-          ================================================================
-          DEBUG_DOC
-      - name: actions/cache for versenv
-        uses: actions/cache@v4
+      - name: actions/cache/restore for versenv
+        uses: actions/cache/restore@v4
+        id: cache-restore-versenv
         with:
-          path: |
-            ~/.cache/versenv
           key: versenv-${{ runner.os }}-${{ hashFiles('**/.versenv.env') }}
           restore-keys: |
             versenv-${{ runner.os }}-
+          path: |
+            ~/.cache/versenv
       - name: Add GITHUB_PATH, GITHUB_ENV
         shell: bash
         run: |
@@ -101,20 +103,64 @@ jobs:
         run: |
           echo "GOVERSION=$(go version | cut -d' ' -f3)" >> "$GITHUB_OUTPUT"
           echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-      - name: actions/cache for go
-        uses: actions/cache@v4
+      - name: actions/cache/restore for go
+        uses: actions/cache/restore@v4
+        id: cache-restore-go
         with:
-          path: |
-            ~/go/pkg/mod
-          # ${{ steps.golang-info.outputs.GOCACHE }} # NOTE: There are cases where build artifacts before modification are cached and cannot be resolved, so they are excluded from caching.
           key: ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
           restore-keys: |
             ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-${{ hashFiles('**/go.sum') }}-
             ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-
             ${{ runner.os }}-go-
+          path: |
+            ~/go/pkg/mod
+            ${{ steps.golang-info.outputs.GOCACHE }}
+      # - uses: actions/create-github-app-token@v1
+      #   id: github-apps-token
+      #   with:
+      #     app-id: ${{ secrets.GH_APPS_APP_ID }}
+      #     private-key: ${{ secrets.GH_APPS_PRIVATE_KEY }}
+      #     owner: ${{ github.repository_owner }} # For creating a token for all repositories in the current owner's installation
+      # - name: Setup git config for go mod download
+      #   env:
+      #     GITHUB_TOKEN: ${{ steps.github-apps-token.outputs.token }}
+      #   working-directory: ${{ env.WORKDIR }}
+      #   shell: bash
+      #   run: |
+      #     set -Eeu -o pipefail -x
+      #     direnv allow .
+      #     if [ -n "${GITHUB_TOKEN-}" ]; then
+      #       direnv exec . bash -Eeu -o pipefail -x -c '
+      #         if grep ^ghs_ <<<"${GITHUB_TOKEN:?}" > /dev/null 2>&1; then
+      #           echo "x-access-token:${GITHUB_TOKEN:?}" > /tmp/basic_auth
+      #         else
+      #           echo "${GITHUB_TOKEN:?}:x-oauth-basic" > /tmp/basic_auth
+      #         fi
+      #         echo "${GOPRIVATE:-}${GOPRIVATE+,}" |
+      #           while read -d , -r LINE; do
+      #             echo "set git config: ${LINE}"
+      #             git config --global url."https://$(cat /tmp/basic_auth)@${LINE}".insteadOf "https://${LINE}"
+      #           done
+      #       '
+      #     fi
       - uses: golangci/golangci-lint-action@v6.5.0 # ref. https://github.com/golangci/golangci-lint-action#how-to-use
         with:
           working-directory: ${{ env.WORKDIR }}
           args: --timeout=600s
           version: latest # or v${{ env.GOLANGCI_LINT_VERSION }}
           skip-cache: true
+      - name: actions/cache/save for go
+        uses: actions/cache/save@v4
+        if: always() && ${{ steps.cache-restore-go.outputs.cache-matched-key != steps.cache-restore-go.outputs.cache-primary-key }}
+        with:
+          key: ${{ steps.cache-restore-go.outputs.cache-primary-key }}
+          path: |
+            ~/go/pkg/mod
+            ${{ steps.golang-info.outputs.GOCACHE }}
+      - name: actions/cache/save for versenv
+        uses: actions/cache/save@v4
+        if: always() && ${{ steps.cache-restore-versenv.outputs.cache-matched-key != steps.cache-restore-versenv.outputs.cache-primary-key }}
+        with:
+          key: ${{ steps.cache-restore-versenv.outputs.cache-primary-key }}
+          path: |
+            ~/.cache/versenv
