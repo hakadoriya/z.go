@@ -1,14 +1,3 @@
-// Package sheetz provides a database/sql driver for the Google Sheets API.
-//
-// Warning: This package is experimental and the syntax is subject to change.
-//
-// Supported examples:
-//
-//	SELECT * FROM Sheet1
-//	SELECT column1, column2 FROM Sheet1
-//	SELECT * FROM Sheet1!A1:Z
-//	SELECT column1, column2 FROM "Sheet With Space"!A1:Z
-//	(Trailing semicolon is optional.)
 package sheetz
 
 import (
@@ -22,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/api/googleapi"
 	sheets "google.golang.org/api/sheets/v4"
 )
 
@@ -38,7 +28,10 @@ var (
 // =====================================
 // Driver
 // =====================================
-type Driver struct{}
+type Driver struct {
+	NewContext       func() context.Context
+	NewSheetsService func(ctx context.Context) (*sheets.Service, error)
+}
 
 var _ driver.Driver = (*Driver)(nil)
 
@@ -49,46 +42,54 @@ var (
 	newSheetsServiceMu sync.RWMutex
 )
 
-func SetNewContext(f func() context.Context) {
-	newContextMu.Lock()
-	defer newContextMu.Unlock()
-	newContext = f
+func defaultNewContext() context.Context {
+	return context.Background()
 }
 
-func GetNewContext() func() context.Context {
-	newContextMu.RLock()
-	defer newContextMu.RUnlock()
-	return newContext
+func defaultNewSheetsService(ctx context.Context) (*sheets.Service, error) {
+	return sheets.NewService(ctx)
 }
 
-func SetNewSheetsService(f func(ctx context.Context) (*sheets.Service, error)) {
-	newSheetsServiceMu.Lock()
-	defer newSheetsServiceMu.Unlock()
-	newSheetsService = f
+type Client interface {
+	SpreadsheetsValuesGet(spreadsheetId string, range_ string, opts ...googleapi.CallOption) (*sheets.ValueRange, error)
 }
 
-func GetNewSheetsService() func(ctx context.Context) (*sheets.Service, error) {
-	newSheetsServiceMu.RLock()
-	defer newSheetsServiceMu.RUnlock()
-	return newSheetsService
+type client struct {
+	sheetsService *sheets.Service
+}
+
+func (c *client) SpreadsheetsValuesGet(spreadsheetId string, range_ string, opts ...googleapi.CallOption) (*sheets.ValueRange, error) {
+	return c.sheetsService.Spreadsheets.Values.Get(spreadsheetId, range_).Do(opts...)
 }
 
 // dsn is expected to be a string in the format "<SpreadsheetID>" (in reality, you might need to include the sheet name as well)
 func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	// Set up authentication and create a Sheets API client
 	// In actual usage, you would typically read credentials from credentials.json or from a token file, etc.
-	ctx, cancel := context.WithCancel(GetNewContext()())
-	srv, err := GetNewSheetsService()(ctx)
+	newContext := defaultNewContext
+	if d.NewContext != nil {
+		newContext = d.NewContext
+	}
+	ctx, cancel := context.WithCancel(newContext())
+
+	newSheetsService := defaultNewSheetsService
+	if d.NewSheetsService != nil {
+		newSheetsService = d.NewSheetsService
+	}
+	srv, err := newSheetsService(ctx)
 	if err != nil {
 		defer cancel()
-		return nil, fmt.Errorf("sheets.NewService: %w", err)
+		return nil, fmt.Errorf("newSheetsService: %w", err)
+	}
+	client := &client{
+		sheetsService: srv,
 	}
 
 	conn := &conn{
 		ctx:       ctx,
 		ctxCancel: cancel,
 		sheetID:   dsn,
-		service:   srv,
+		client:    client,
 	}
 	return conn, nil
 }
@@ -100,7 +101,7 @@ type conn struct {
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	sheetID   string
-	service   *sheets.Service
+	client    Client
 }
 
 var _ driver.Conn = (*conn)(nil)
@@ -169,8 +170,7 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 	// 2) Retrieve values from the sheet
 	parsedReadRange := parsedQuery.sheetName
 
-	spreadsheetsValuesGetCall := s.conn.service.Spreadsheets.Values.Get(s.conn.sheetID, parsedReadRange)
-	resp, err := spreadsheetsValuesGetCall.Do()
+	resp, err := s.conn.client.SpreadsheetsValuesGet(s.conn.sheetID, parsedReadRange)
 	if err != nil {
 		return nil, fmt.Errorf("spreadsheetsValuesGetCall.Do: %w", err)
 	}

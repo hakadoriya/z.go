@@ -36,6 +36,7 @@ go get -u github.com/hakadoriya/z.go
 | [`envz`](./envz) | envz package provides a structured approach to environment variable management, featuring struct tag-based configuration and automatic environment variable parsing and validation. |
 | [`errorz`](./errorz) | errorz package provides enhanced error handling utilities, including stack trace generation, error wrapping, and custom error type creation with detailed error context. |
 | [`genericz`](./genericz) | genericz package provides utility functions and types for working with Go generics, offering common generic algorithms and data structure operations. |
+| [`googlez/apiz/sheetz`](./googlez/apiz/sheetz) | Package sheetz provides a database/sql driver for the Google Sheets API. |
 | [`grpcz/grpclogz`](./grpcz/grpclogz) | grpclogz package provides logging utilities specifically designed for gRPC operations, integrating with Google's gRPC logging system for enhanced logging capabilities. |
 | [`logz/slogz`](./logz/slogz) | slogz package provides utilities for working with Go's log/slog package, offering enhanced logging functionality, custom formatters, and logging middleware. |
 | [`mapz`](./mapz) | mapz package provides utilities for map operations in Go, including safe concurrent access, map manipulation, and helper functions for common map operations. |
