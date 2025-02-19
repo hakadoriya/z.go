@@ -60,8 +60,10 @@ test:  ## Run go test and display coverage
 	@[ -x "${DOTLOCAL_BIN_DIR}/godotnev" ] || GOBIN="${DOTLOCAL_BIN_DIR}" go install github.com/joho/godotenv/cmd/godotenv@latest
 
 	# Unit testing
-	godotenv -f .test.env go test -v -race -p=4 -parallel=8 -timeout=300s -cover -coverprofile=./coverage.txt.tmp ./... ; grep -v -e "/buildinfoz/" -e "/buildz/" -e "/example/" -e "/googlez/apiz/" -e "/grpcz/" -e "/otelz/" -e "/testingz/" -e ".deprecated.go" -e ".generated.go" -e ".gen.go" ./coverage.txt.tmp > ./coverage.txt
-	go tool cover -func=./coverage.txt
+	(godotenv -f .test.env go test -v -race -p=4 -parallel=8 -timeout=300s -cover -coverprofile=./coverage.txt.tmp ./... ; grep -v -e "/buildinfoz/" -e "/buildz/" -e "/example/" -e "/testingz/" -e ".deprecated.go" -e ".generated.go" -e ".gen.go" ./coverage.txt.tmp > ./coverage.txt ; go tool cover -func=./coverage.txt)
+
+	# Unit testing for googlez/apiz module
+	(cd ./googlez/apiz && godotenv -f .test.env go test -v -race -p=4 -parallel=8 -timeout=300s -cover -coverprofile=./coverage.txt.tmp ./... ; grep -v -e "/example/" -e ".deprecated.go" -e ".generated.go" -e ".gen.go" ./coverage.txt.tmp > ./coverage.txt ; go tool cover -func=./coverage.txt)
 
 .PHONY: bench
 bench: ## Run benchmarks
