@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -20,6 +22,8 @@ func init() {
 	sql.Register("gsheets", &Driver{})
 }
 
+var DefaultLogger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelWarn}))
+
 var (
 	ErrUnsupportedQueryFormat             = errors.New("sheetz: unsupported query format")
 	ErrWhereClauseIsNotSupportedCurrently = errors.New("sheetz: WHERE clause is not supported currently")
@@ -31,6 +35,8 @@ var (
 type Driver struct {
 	NewContext       func() context.Context
 	NewSheetsService func(ctx context.Context) (*sheets.Service, error)
+	ConvertValueFunc func(ctx context.Context, spreadsheetId string, sheetName string, columnName string, value any) (any, error)
+	Logger           *slog.Logger
 }
 
 var _ driver.Driver = (*Driver)(nil)
@@ -55,13 +61,31 @@ type Client interface {
 }
 
 type client struct {
+	driver        *Driver
 	sheetsService *sheets.Service
 }
 
 func (c *client) SpreadsheetsValuesGet(spreadsheetId string, range_ string, opts ...googleapi.CallOption) (*sheets.ValueRange, error) {
+	c.driver.logger().Debug("SpreadsheetsValuesGet", slog.String("spreadsheetId", spreadsheetId), slog.String("range", range_))
 	return c.sheetsService.Spreadsheets.Values.Get(spreadsheetId, range_).Do(opts...)
 }
 
+func (d *Driver) convertValue(ctx context.Context, spreadsheetId string, sheetName string, columnName string, value any) (any, error) {
+	d.logger().Debug("convertValue", slog.String("spreadsheetId", spreadsheetId), slog.String("sheetName", sheetName), slog.String("columnName", columnName), slog.Any("value", value))
+	if d.ConvertValueFunc != nil {
+		return d.ConvertValueFunc(ctx, spreadsheetId, sheetName, columnName, value)
+	}
+	return value, nil
+}
+
+func (d *Driver) logger() *slog.Logger {
+	if d.Logger != nil {
+		return d.Logger
+	}
+	return DefaultLogger
+}
+
+// dsn is expected to be a string in the format "<SpreadsheetID>" (in reality, you might need to include the sheet name as well)
 // dsn is expected to be a string in the format "<SpreadsheetID>" (in reality, you might need to include the sheet name as well)
 func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	// Set up authentication and create a Sheets API client
@@ -82,10 +106,12 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 		return nil, fmt.Errorf("newSheetsService: %w", err)
 	}
 	client := &client{
+		driver:        d,
 		sheetsService: srv,
 	}
 
 	conn := &conn{
+		driver:    d,
 		ctx:       ctx,
 		ctxCancel: cancel,
 		sheetID:   dsn,
@@ -98,23 +124,32 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 // Conn
 // =====================================
 type conn struct {
+	driver    *Driver
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	sheetID   string
 	client    Client
 }
 
-var _ driver.Conn = (*conn)(nil)
+var (
+	_ driver.ConnPrepareContext = (*conn)(nil)
+	_ driver.Conn               = (*conn)(nil)
+)
 
-// Prepare creates a statement from an SQL query.
-func (c *conn) Prepare(query string) (driver.Stmt, error) {
+// PrepareContext creates a statement from an SQL query.
+func (c *conn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	// In this simplified example, pass the query directly to the statement.
 	return &stmt{
-		ctx:       c.ctx,
+		ctx:       ctx,
 		ctxCancel: c.ctxCancel,
 		conn:      c,
 		query:     query,
 	}, nil
+}
+
+// Prepare creates a statement from an SQL query.
+func (c *conn) Prepare(query string) (driver.Stmt, error) {
+	return c.PrepareContext(c.ctx, query)
 }
 
 // Close closes the connection.
@@ -138,7 +173,10 @@ type stmt struct {
 	query     string
 }
 
-var _ driver.Stmt = (*stmt)(nil)
+var (
+	_ driver.StmtQueryContext = (*stmt)(nil)
+	_ driver.Stmt             = (*stmt)(nil)
+)
 
 // Close closes the statement.
 func (s *stmt) Close() error {
@@ -157,7 +195,13 @@ func (s *stmt) Exec(args []driver.Value) (driver.Result, error) {
 }
 
 // Query executes a read query.
-func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
+func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	// 1) Parse the query string to extract the following:
 	//    - columns   : list of columns specified in the SELECT clause (if ["*"], then all)
 	//    - sheetName : table name specified in the FROM clause (i.e. the sheet name)
@@ -168,9 +212,7 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 
 	// 2) Retrieve values from the sheet
-	parsedReadRange := parsedQuery.sheetName
-
-	resp, err := s.conn.client.SpreadsheetsValuesGet(s.conn.sheetID, parsedReadRange)
+	resp, err := s.conn.client.SpreadsheetsValuesGet(s.conn.sheetID, parsedQuery.sheetRange)
 	if err != nil {
 		return nil, fmt.Errorf("spreadsheetsValuesGetCall.Do: %w", err)
 	}
@@ -247,6 +289,17 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
 		data = append(data, rowData)
 	}
 
+	// 7) Convert values to the appropriate type.
+	for rowIdx, row := range data {
+		for colIdx, colName := range columnsQueried {
+			converted, err := s.conn.driver.convertValue(s.conn.ctx, s.conn.sheetID, parsedQuery.sheetName, colName, row[colIdx])
+			if err != nil {
+				return nil, fmt.Errorf("s.conn.driver.convert: %w", err)
+			}
+			data[rowIdx][colIdx] = converted
+		}
+	}
+
 	return &gSheetRows{
 		columns: columnsQueried,
 		data:    data,
@@ -280,6 +333,21 @@ func skipCommentRows(rows [][]interface{}) [][]interface{} {
 	return rows[i:]
 }
 
+func toNamedValues(args []driver.Value) []driver.NamedValue {
+	namedArgs := make([]driver.NamedValue, len(args))
+	for i, arg := range args {
+		namedArgs[i] = driver.NamedValue{
+			Ordinal: i,
+			Value:   arg,
+		}
+	}
+	return namedArgs
+}
+
+func (s *stmt) Query(args []driver.Value) (driver.Rows, error) {
+	return s.QueryContext(s.ctx, toNamedValues(args))
+}
+
 // =====================================
 // Rows
 // =====================================
@@ -288,6 +356,8 @@ type gSheetRows struct {
 	data    [][]interface{}
 	curr    int
 }
+
+var _ driver.Rows = (*gSheetRows)(nil)
 
 func (r *gSheetRows) Columns() []string {
 	return r.columns
@@ -322,13 +392,16 @@ func (r *gSheetRows) Next(dest []driver.Value) error {
 //
 // Desired output:
 //
-//	columns   []string ("*" or ["colA","colB",...])
-//	sheetName string
+//	columns    []string ("*" or ["colA","colB",...])
+//	sheetName  string
+//	sheetRange string
 //
 // =====================================
 type parsedSelect struct {
-	columns   []string
-	sheetName string
+	columns    []string
+	sheetName  string
+	rangeSpec  string
+	sheetRange string
 }
 
 // Use a regular expression to extract the following:
@@ -345,7 +418,15 @@ var (
 		`(?i)^\s*SELECT\s+` + // SELECT
 			`(?P<columns>.+?)\s+` + // column part
 			`FROM\s+` + // FROM
-			`(?P<sheetName>"(?P<sheetNameInQuote>[^"]+?)"|'(?P<sheetNameInQuote>[^']+?)'|` + "`(?P<sheetNameInQuote>[^`]+?)`|" + `\S+?)(!(?P<rangeSpec>\S+?))?` + // sheet name
+			`(?P<sheetRange>` + // sheet range
+			`(?P<sheetName>` + // sheet name
+			`"(?P<sheetNameInQuote>[^"]+?)"|` +
+			`'(?P<sheetNameInQuote>[^']+?)'|` +
+			"`(?P<sheetNameInQuote>[^`]+?)`|" +
+			`\S+?` +
+			`)` + // sheet name
+			`(!(?P<rangeSpec>\S+?))?` + // range spec
+			`)` + // sheet range
 			`(\s+(?P<wherePart>WHERE\s+` + // WHERE clause
 			`(.+?)` + // TODO: implement
 			`))?` + // WHERE clause
@@ -372,17 +453,23 @@ func parseSelectQuery(query string) (*parsedSelect, error) {
 	}
 
 	// matches["columns"]          -> column part (e.g., "*" or "column1, column2")
+	// matches["sheetRange"]       -> sheet range (e.g., "A1:Z")
 	// matches["sheetName"]        -> full sheet name (e.g., "Sheet1" or "Sheet With Space")
 	// matches["sheetNameInQuote"] -> double-quoted content of the sheet name (e.g., Sheet With Space)
+	// matches["rangeSpec"]        -> range spec (e.g., "A1:Z")
 	// matches["wherePart"]        -> WHERE clause
 	columnsPart := result["columns"]
 	sheetNamePart := result["sheetName"]
 	sheetNameInQuotePart := result["sheetNameInQuote"]
+	rangeSpecPart := result["rangeSpec"]
 	wherePart := result["wherePart"]
 
 	if wherePart != "" {
 		return nil, fmt.Errorf("query=%q: %w", query, ErrWhereClauseIsNotSupportedCurrently)
 	}
+
+	// Parse the column list.
+	colList := parseColumnList(columnsPart)
 
 	// Determine the sheet name.
 	sheetName := sheetNamePart
@@ -390,12 +477,16 @@ func parseSelectQuery(query string) (*parsedSelect, error) {
 		sheetName = sheetNameInQuotePart
 	}
 
-	// Parse the column list.
-	colList := parseColumnList(columnsPart)
+	sheetRange := sheetName
+	if rangeSpecPart != "" {
+		sheetRange = sheetName + "!" + rangeSpecPart
+	}
 
 	return &parsedSelect{
-		columns:   colList,
-		sheetName: sheetName,
+		columns:    colList,
+		sheetName:  sheetName,
+		rangeSpec:  rangeSpecPart,
+		sheetRange: sheetRange,
 	}, nil
 }
 
