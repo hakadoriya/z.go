@@ -10,6 +10,15 @@ import (
 )
 
 func TestCommand_Parse(t *testing.T) {
+	t.Run("error,strconv.ParseBool", func(t *testing.T) {
+		c := newTestCommand()
+		t.Setenv("BOOL_OPT", "FAILURE")
+		_, err := c.Parse(context.Background(), []string{"main-cli"})
+		requirez.ErrorContains(t, err, `strconv.ParseBool: parsing "FAILURE": invalid syntax`)
+	})
+}
+
+func TestCommand_parse(t *testing.T) {
 	t.Parallel()
 
 	t.Run("success,", func(t *testing.T) {
@@ -232,15 +241,6 @@ func TestCommand_Parse(t *testing.T) {
 		c := newTestCommand()
 		_, err := c.parse(ctx, []string{"main-cli"})
 		requirez.ErrorIs(t, err, context.Canceled)
-	})
-}
-
-func TestCommand_Parse_Environment(t *testing.T) {
-	t.Run("error,strconv.ParseBool", func(t *testing.T) {
-		c := newTestCommand()
-		t.Setenv("BOOL_OPT", "FAILURE")
-		_, err := c.parse(context.Background(), []string{"main-cli"})
-		requirez.ErrorContains(t, err, `strconv.ParseBool: parsing "FAILURE": invalid syntax`)
 	})
 }
 

@@ -1,9 +1,9 @@
 package slicez
 
-func Map[T, U any](src []T, f func(T) U) []U {
+func Map[T, U any](src []T, generator func(index int, elem T) U) []U {
 	b := make([]U, len(src))
 	for i := range src {
-		b[i] = f(src[i])
+		b[i] = generator(i, src[i])
 	}
 	return b
 }
