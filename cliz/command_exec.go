@@ -17,7 +17,7 @@ func (c *Command) Exec(ctx context.Context, osArgs []string) (err error) {
 
 	defer func() {
 		if IsHelp(err) {
-			executed.showUsage()
+			executed.usage()
 		}
 	}()
 
