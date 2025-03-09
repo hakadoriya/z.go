@@ -142,7 +142,7 @@ func TestCommand_ShowUsage(t *testing.T) {
 		c.UsageFunc = func(c *Command) {
 			_, _ = c.Stderr().Write([]byte("UsageFunc\n"))
 		}
-		c.showUsage()
+		c.usage()
 		requirez.Equal(t, "UsageFunc\n", buf.String())
 	})
 }
@@ -156,7 +156,7 @@ func TestCommand_showUsage(t *testing.T) {
 		c := &Command{Name: "main-cli", Usage: "main-cli [OPTIONS]"}
 		buf := new(bytes.Buffer)
 		c.SetStderr(buf)
-		c.showUsage()
+		c.usage()
 		const expected = `Usage:
     main-cli [OPTIONS]
 `

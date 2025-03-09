@@ -51,7 +51,7 @@ func (c *Command) checkHelp() error {
 	helpRequested, err := c.getOptionHelp(HelpOptionName)
 	if err == nil && helpRequested {
 		Logger.Debug("checkHelp: " + strings.Join(c.allExecutedCommandNames, " "))
-		c.showUsage()
+		c.usage()
 		return ErrHelp
 	}
 
@@ -65,7 +65,7 @@ func (c *Command) checkHelp() error {
 	return nil
 }
 
-func (c *Command) showUsage() {
+func (c *Command) usage() {
 	if c.UsageFunc != nil {
 		c.UsageFunc(c)
 		return
