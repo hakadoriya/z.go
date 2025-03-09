@@ -116,7 +116,9 @@ func UnmarshalOptions(c *Command, v interface{}, opts ...UnmarshalOptionsOption)
 func parseTagValue(tagValue string) (envKey string, opts []string) {
 	if i := strings.Index(tagValue, ","); i != -1 {
 		envKey = tagValue[:i]
-		opts = slicez.Map(strings.Split(tagValue[i+1:], ","), stringz.TrimLeftSpace)
+		opts = slicez.Map(strings.Split(tagValue[i+1:], ","), func(_ int, value string) string {
+			return stringz.TrimLeftSpace(value)
+		})
 	} else {
 		envKey = tagValue
 	}
