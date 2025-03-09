@@ -126,34 +126,34 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 		opt.apply(cfg)
 	}
 
-	ref := reflect.ValueOf(v)
-	if ref.Kind() != reflect.Ptr {
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr {
 		return nil, fmt.Errorf("%T: %w", v, ErrInvalidType)
 	}
 
-	ref = ref.Elem()
-	if ref.Kind() != reflect.Struct {
+	val = val.Elem()
+	if val.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("%T: %w", v, ErrInvalidType)
 	}
 
-	typ := ref.Type()
-	for i := range ref.NumField() {
-		field := typ.Field(i)
-		fieldValue := ref.Field(i)
+	valType := val.Type()
+	for i := range val.NumField() {
+		field := valType.Field(i)
+		fieldValue := val.Field(i)
 		if !fieldValue.CanSet() {
-			return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %w", typ, field.Name, cfg.tagKey, ErrStructFieldCannotBeSet)
+			return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %w", valType, field.Name, cfg.tagKey, ErrStructFieldCannotBeSet)
 		}
 
 		tagValue := stringz.TrimLeftSpace(field.Tag.Get(cfg.tagKey))
-		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, tagValue=%s", typ, field.Name, cfg.tagKey, tagValue))
+		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, tagValue=%s", valType, field.Name, cfg.tagKey, tagValue))
 		if tagValue == "" {
 			continue
 		}
 
 		optName, opts := parseTagValue(tagValue)
-		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, optName=%s, opts=%v", typ, field.Name, cfg.tagKey, optName, opts))
+		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, optName=%s, opts=%v", valType, field.Name, cfg.tagKey, optName, opts))
 		if optName == "" {
-			return nil, fmt.Errorf("type=%s: field=%s: tag=%s: tagValue=%s: %w", typ, field.Name, cfg.tagKey, tagValue, ErrInvalidTagValue)
+			return nil, fmt.Errorf("type=%s: field=%s: tag=%s: tagValue=%s: %w", valType, field.Name, cfg.tagKey, tagValue, ErrInvalidTagValue)
 		}
 
 		var (
@@ -205,7 +205,7 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 			if defaultValueIsSet {
 				defaultValueBool, err = strconv.ParseBool(defaultValue)
 				if err != nil {
-					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", typ, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
+					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", valType, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
 				}
 			}
 			//nolint:exhaustruct
@@ -222,7 +222,7 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 			if defaultValueIsSet {
 				defaultValueInt64, err = strconv.ParseInt(defaultValue, base, bitSize)
 				if err != nil {
-					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", typ, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
+					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", valType, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
 				}
 			}
 			//nolint:exhaustruct
@@ -239,7 +239,7 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 			if defaultValueIsSet {
 				defaultValueUint64, err = strconv.ParseUint(defaultValue, base, bitSize)
 				if err != nil {
-					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", typ, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
+					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", valType, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
 				}
 			}
 			//nolint:exhaustruct
@@ -256,7 +256,7 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 			if defaultValueIsSet {
 				defaultValueFloat64, err = strconv.ParseFloat(defaultValue, bitSize)
 				if err != nil {
-					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", typ, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
+					return nil, fmt.Errorf("type=%s: field=%s: tag=%s: %s=%s: %w", valType, field.Name, cfg.tagKey, cfg.defaultKey, defaultValue, err)
 				}
 			}
 			//nolint:exhaustruct
@@ -269,7 +269,7 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 				Description: description,
 			})
 		default:
-			return nil, fmt.Errorf("type=%s: field=%s: fieldType=%s: tag=%s: %w", typ, field.Name, field.Type, cfg.tagKey, ErrStructFieldTypeNotSupported)
+			return nil, fmt.Errorf("type=%s: field=%s: fieldType=%s: tag=%s: %w", valType, field.Name, field.Type, cfg.tagKey, ErrStructFieldTypeNotSupported)
 		}
 	}
 

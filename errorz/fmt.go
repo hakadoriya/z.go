@@ -243,13 +243,13 @@ Verb:
 }
 
 func (e *wrapError) GoString() string {
-	typ := reflect.TypeOf(*e)
+	valType := reflect.TypeOf(*e)
 	val := reflect.ValueOf(*e)
-	elems := make([]string, typ.NumField())
-	for i := range typ.NumField() {
-		elems[i] = fmt.Sprintf("%s:%#v", typ.Field(i).Name, val.Field(i))
+	elems := make([]string, valType.NumField())
+	for i := range valType.NumField() {
+		elems[i] = fmt.Sprintf("%s:%#v", valType.Field(i).Name, val.Field(i))
 	}
-	return fmt.Sprintf("&%s{%s}", typ, strings.Join(elems, ", "))
+	return fmt.Sprintf("&%s{%s}", valType, strings.Join(elems, ", "))
 }
 
 func (e *wrapError) Unwrap() error {
