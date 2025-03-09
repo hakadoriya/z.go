@@ -43,20 +43,20 @@ func UnmarshalOptions(c *Command, v interface{}, opts ...UnmarshalOptionsOption)
 		opt.apply(cfg)
 	}
 
-	ref := reflect.ValueOf(v)
-	if ref.Kind() != reflect.Ptr {
+	val := reflect.ValueOf(v)
+	if val.Kind() != reflect.Ptr {
 		return fmt.Errorf("%T: %w", v, ErrInvalidType)
 	}
 
-	ref = ref.Elem()
-	if ref.Kind() != reflect.Struct {
+	val = val.Elem()
+	if val.Kind() != reflect.Struct {
 		return fmt.Errorf("%T: %w", v, ErrInvalidType)
 	}
 
-	typ := ref.Type()
-	for i := range ref.NumField() {
-		field := typ.Field(i)
-		fieldValue := ref.Field(i)
+	valType := val.Type()
+	for i := range val.NumField() {
+		field := valType.Field(i)
+		fieldValue := val.Field(i)
 		if !fieldValue.CanSet() {
 			return fmt.Errorf("field=%s: tag=%s: %w", field.Name, cfg.tagKey, ErrStructFieldCannotBeSet)
 		}
