@@ -9,6 +9,11 @@ import (
 	"github.com/hakadoriya/z.go/errorz"
 )
 
+// NOTE: Use (*cliz.Command).Parse when the cliz package user wants to test the behavior of command line options. Usually, (*cliz.Command).Exec is sufficient.
+func (c *Command) Parse(ctx context.Context, osArgs []string) (remainingArgs []string, err error) {
+	return c.parse(ctx, osArgs)
+}
+
 func (c *Command) parse(ctx context.Context, osArgs []string) (remainingArgs []string, err error) {
 	if len(c.remainingArgs) > 0 {
 		// If remainingArgs is not empty, it is already parsed.
@@ -16,6 +21,9 @@ func (c *Command) parse(ctx context.Context, osArgs []string) (remainingArgs []s
 	}
 
 	c.ctx = ctx
+	defer func() {
+		c.ctx = WithContext(c.ctx, c)
+	}()
 
 	// following is not idempotent.
 
