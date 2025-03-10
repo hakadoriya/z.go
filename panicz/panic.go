@@ -7,7 +7,7 @@ func Panic(err error, opts ...PanicOption) {
 		return
 	}
 
-	config := &panicConfig{}
+	config := new(panicConfig)
 	for _, opt := range opts {
 		opt.apply(config)
 	}

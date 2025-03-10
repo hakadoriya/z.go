@@ -6,6 +6,8 @@ import (
 )
 
 func TestFilterMap(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name      string
 		input     []int
@@ -43,6 +45,8 @@ func TestFilterMap(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := FilterMap(test.input, test.generator)
 			if len(result) != len(test.expected) {
 				t.Errorf("❌: expected length %d, got %d", len(test.expected), len(result))

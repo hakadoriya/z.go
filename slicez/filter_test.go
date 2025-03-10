@@ -5,6 +5,8 @@ import (
 )
 
 func TestFilter(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		input      []int
@@ -47,6 +49,8 @@ func TestFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := Filter(tt.input, tt.shouldKeep)
 			if len(result) != len(tt.expected) {
 				t.Errorf("expected length %d, got %d", len(tt.expected), len(result))
