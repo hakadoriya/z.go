@@ -73,7 +73,11 @@ func (c *client) SpreadsheetsValuesGet(spreadsheetId string, range_ string, opts
 func (d *Driver) convertValue(ctx context.Context, spreadsheetId string, sheetName string, columnName string, value any) (any, error) {
 	d.logger().Debug("convertValue", slog.String("spreadsheetId", spreadsheetId), slog.String("sheetName", sheetName), slog.String("columnName", columnName), slog.Any("value", value))
 	if d.ConvertValueFunc != nil {
-		return d.ConvertValueFunc(ctx, spreadsheetId, sheetName, columnName, value)
+		converted, err := d.ConvertValueFunc(ctx, spreadsheetId, sheetName, columnName, value)
+		if err != nil {
+			return nil, fmt.Errorf("d.ConvertValueFunc: spreadsheetId=%q, sheetName=%q, columnName=%q, value=%v: %w", spreadsheetId, sheetName, columnName, value, err)
+		}
+		return converted, nil
 	}
 	return value, nil
 }
@@ -299,7 +303,7 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 		for colIdx, colName := range columnsQueried {
 			converted, err := s.conn.driver.convertValue(s.conn.ctx, s.conn.sheetID, parsedQuery.sheetName, colName, row[colIdx])
 			if err != nil {
-				return nil, fmt.Errorf("s.conn.driver.convert: %w", err)
+				return nil, fmt.Errorf("s.conn.driver.convertValue: %w", err)
 			}
 			data[rowIdx][colIdx] = converted
 		}
