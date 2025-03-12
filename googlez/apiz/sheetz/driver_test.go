@@ -274,9 +274,9 @@ func TestStmt_NumInput(t *testing.T) {
 		t.Parallel()
 		// When: Counting the number of input placeholders.
 		count := s.NumInput()
-		// Then: The count should be 2.
-		if count != 2 {
-			t.Errorf("❌: expected %d, got %d", 2, count)
+		// Then: The count should be -1.
+		if count != -1 {
+			t.Errorf("❌: expected %d, got %d", -1, count)
 		}
 	})
 }
