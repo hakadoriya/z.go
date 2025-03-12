@@ -185,8 +185,13 @@ func (s *stmt) Close() error {
 }
 
 // NumInput returns the number of placeholders. It is not supported currently.
+//
+// ref: https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:src/database/sql/driver/driver.go;l=346-349
+// > NumInput may also return -1, if the driver doesn't know
+// > its number of placeholders. In that case, the sql package
+// > will not sanity check Exec or Query argument counts.
 func (s *stmt) NumInput() int {
-	return strings.Count(s.query, "?")
+	return -1
 }
 
 // Exec executes an update query. It is not supported currently.
