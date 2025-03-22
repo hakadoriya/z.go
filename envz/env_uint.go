@@ -7,7 +7,10 @@ import (
 	"strconv"
 )
 
-var testMaxUintOutOfRange = false
+//nolint:gochecknoglobals // for test
+var (
+	testMaxUintOutOfRange = false
+)
 
 func Uint(key string) (uint, error) {
 	env, found := os.LookupEnv(key)
