@@ -46,11 +46,7 @@ func TestFindPackageImportPath(t *testing.T) {
 	t.Run("success,NotInGOPATH", func(t *testing.T) {
 		t.Parallel()
 
-		tempDir, err := os.MkdirTemp("", "buildz-test")
-		if err != nil {
-			t.Fatalf("❌: err != nil: %+v", err)
-		}
-		defer os.RemoveAll(tempDir)
+		tempDir := t.TempDir()
 
 		testGoModFile, err := os.Create(filepath.Join(tempDir, "go.mod"))
 		if err != nil {
@@ -241,11 +237,7 @@ func Test_findPackageImportPath2(t *testing.T) {
 			OSStatFunc:      os.Stat,
 		}
 
-		tempDir, err := os.MkdirTemp("", "buildz-test")
-		if err != nil {
-			t.Fatalf("❌: err != nil: %+v", err)
-		}
-		defer os.RemoveAll(tempDir)
+		tempDir := t.TempDir()
 
 		testGoModFile, err := os.Create(filepath.Join(tempDir, "go.mod"))
 		if err != nil {
