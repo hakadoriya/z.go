@@ -2,10 +2,12 @@ package envz
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
-	"math"
 )
+
+var testMaxUintOutOfRange = false
 
 func Uint(key string) (uint, error) {
 	env, found := os.LookupEnv(key)
@@ -18,8 +20,8 @@ func Uint(key string) (uint, error) {
 		return 0, fmt.Errorf("strconv.ParseInt: %w", err)
 	}
 
-	if value > math.MaxUint {
-		return 0, fmt.Errorf("value exceeds maximum uint value")
+	if value > math.MaxUint || testMaxUintOutOfRange {
+		return 0, fmt.Errorf("%s=%s: %w", key, env, ErrRange)
 	}
 
 	return uint(value), nil
