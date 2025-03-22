@@ -143,7 +143,7 @@ jobs:
       #           done
       #       '
       #     fi
-      - uses: golangci/golangci-lint-action@v6.5.0 # ref. https://github.com/golangci/golangci-lint-action#how-to-use
+      - uses: golangci/golangci-lint-action@v6.5.2 # ref. https://github.com/golangci/golangci-lint-action#how-to-use
         with:
           working-directory: ${{ env.WORKDIR }}
           args: --timeout=600s
