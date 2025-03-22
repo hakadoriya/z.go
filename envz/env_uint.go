@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"math"
 )
 
 func Uint(key string) (uint, error) {
@@ -15,6 +16,10 @@ func Uint(key string) (uint, error) {
 	value, err := strconv.ParseUint(env, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("strconv.ParseInt: %w", err)
+	}
+
+	if value > math.MaxUint {
+		return 0, fmt.Errorf("value exceeds maximum uint value")
 	}
 
 	return uint(value), nil
