@@ -1,8 +1,12 @@
 package envz
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+)
 
 var (
+	ErrRange                               = errors.New(strconv.ErrRange.Error())
 	ErrEnvironmentVariableIsEmpty          = errors.New("environment variable is empty")
 	ErrInvalidType                         = errors.New("invalid type; must be a pointer to a struct")
 	ErrStructFieldCannotBeSet              = errors.New("struct field cannot be set; unexported field or field is not settable")

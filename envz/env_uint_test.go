@@ -2,6 +2,7 @@
 package envz
 
 import (
+	"math"
 	"strconv"
 	"testing"
 )
@@ -33,6 +34,21 @@ func TestUint(t *testing.T) {
 	t.Run("failure(fail-to-format)", func(t *testing.T) {
 		const expect = 0
 		t.Setenv(TEST_ENV_KEY, "test string")
+		actual, err := Uint(TEST_ENV_KEY)
+		if err == nil {
+			t.Errorf("❌: Env: err == nil")
+		}
+		if expect != actual {
+			t.Errorf("❌: expect != actual: %v != %v", expect, actual)
+		}
+	})
+
+	t.Run("failure(value-exceeds-maximum-uint-value)", func(t *testing.T) {
+		const expect = 0
+		t.Setenv(TEST_ENV_KEY, strconv.FormatUint(math.MaxUint, 10))
+		backup := testMaxUintOutOfRange
+		t.Cleanup(func() { testMaxUintOutOfRange = backup })
+		testMaxUintOutOfRange = true
 		actual, err := Uint(TEST_ENV_KEY)
 		if err == nil {
 			t.Errorf("❌: Env: err == nil")

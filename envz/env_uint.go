@@ -2,8 +2,14 @@ package envz
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
+)
+
+//nolint:gochecknoglobals // for test
+var (
+	testMaxUintOutOfRange = false
 )
 
 func Uint(key string) (uint, error) {
@@ -15,6 +21,10 @@ func Uint(key string) (uint, error) {
 	value, err := strconv.ParseUint(env, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("strconv.ParseInt: %w", err)
+	}
+
+	if value > math.MaxUint || testMaxUintOutOfRange {
+		return 0, fmt.Errorf("%s=%s: %w", key, env, ErrRange)
 	}
 
 	return uint(value), nil
