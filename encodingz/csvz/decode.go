@@ -16,7 +16,7 @@ type CSVUnmarshaler interface {
 
 // CSVDecoder is a decoder for decoding CSV into Go structs
 type CSVDecoder struct {
-	r          *csv.Reader
+	csvReader  *csv.Reader
 	tagName    string
 	timeFormat string
 
@@ -27,7 +27,7 @@ type CSVDecoder struct {
 // NewCSVDecoder creates a new CSVDecoder
 func NewCSVDecoder(r io.Reader, opts ...CSVDecoderOption) *CSVDecoder {
 	d := &CSVDecoder{
-		r:          csv.NewReader(r),
+		csvReader:  csv.NewReader(r),
 		tagName:    defaultCSVTagName,
 		timeFormat: defaultTimeFormat,
 		headers:    make([]string, 0),
@@ -42,7 +42,7 @@ func NewCSVDecoder(r io.Reader, opts ...CSVDecoderOption) *CSVDecoder {
 // Decode decodes CSV into Go structs
 //
 //nolint:cyclop
-func (d *CSVDecoder) Decode(v interface{}) error {
+func (csvDecoder *CSVDecoder) Decode(v interface{}) error {
 	// Verify it's a pointer
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Ptr || rv.IsNil() {
@@ -66,33 +66,33 @@ func (d *CSVDecoder) Decode(v interface{}) error {
 	}
 
 	// Read headers
-	headers, err := d.r.Read()
+	headers, err := csvDecoder.csvReader.Read()
 	if err != nil {
-		return fmt.Errorf("error reading headers: %w", err)
+		return fmt.Errorf("csvDecoder.csvReader.Read: headers=%v: %w", headers, err)
 	}
-	d.headers = headers
+	csvDecoder.headers = headers
 
 	// Build mapping between headers and fields
 	for i, header := range headers {
-		d.fieldMap[header] = i
+		csvDecoder.fieldMap[header] = i
 	}
 
 	// Read each row and convert to struct
 	for {
-		record, err := d.r.Read()
+		record, err := csvDecoder.csvReader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("error reading record: %w", err)
+			return fmt.Errorf("csvDecoder.csvReader.Read: record=%v: %w", record, err)
 		}
 
 		// Create new struct instance
 		newElem := reflect.New(elemType).Elem()
 
 		// Map fields and set data
-		if err := d.mapFields(newElem, record); err != nil {
-			return fmt.Errorf("error mapping fields: %w", err)
+		if err := csvDecoder.mapFields(newElem, record); err != nil {
+			return fmt.Errorf("csvDecoder.mapFields: %w", err)
 		}
 
 		// Append to slice
@@ -107,22 +107,27 @@ func (d *CSVDecoder) Decode(v interface{}) error {
 }
 
 // mapFields maps CSV values to struct fields
-func (d *CSVDecoder) mapFields(structVal reflect.Value, record []string) error {
+func (csvDecoder *CSVDecoder) mapFields(structVal reflect.Value, record []string) error {
 	structType := structVal.Type()
 
 	// Process each field in the struct
 	for i := range structVal.NumField() {
-		field := structVal.Field(i)
+		fieldValue := structVal.Field(i)
 		fieldType := structType.Field(i)
 
+		// skip if field is private
+		if !fieldType.IsExported() {
+			continue
+		}
+
 		// Get column name from tag
-		tag := fieldType.Tag.Get(d.tagName)
+		tag := fieldType.Tag.Get(csvDecoder.tagName)
 		if tag == "" || tag == "-" {
 			continue
 		}
 
 		// Get CSV column index corresponding to the tag
-		colIdx, ok := d.fieldMap[tag]
+		colIdx, ok := csvDecoder.fieldMap[tag]
 		if !ok {
 			continue // Skip if no matching column
 		}
@@ -133,7 +138,7 @@ func (d *CSVDecoder) mapFields(structVal reflect.Value, record []string) error {
 		}
 
 		// Convert string to appropriate type and set field
-		if err := d.setFieldValue(field, record[colIdx]); err != nil {
+		if err := csvDecoder.setFieldValue(fieldValue, record[colIdx]); err != nil {
 			return fmt.Errorf("error setting field %s: %w", fieldType.Name, err)
 		}
 	}
@@ -144,9 +149,9 @@ func (d *CSVDecoder) mapFields(structVal reflect.Value, record []string) error {
 // setFieldValue converts a string value to the appropriate type and sets it to the field
 //
 //nolint:cyclop,funlen
-func (d *CSVDecoder) setFieldValue(field reflect.Value, value string) error {
+func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) error {
 	if !field.CanSet() {
-		return ErrFieldCannotBeSet
+		return ErrStructFieldCannotBeSet
 	}
 
 	if value == "" {
@@ -206,7 +211,7 @@ func (d *CSVDecoder) setFieldValue(field reflect.Value, value string) error {
 	case reflect.Struct:
 		// time.Time's special handling
 		if field.Type() == reflect.TypeOf(time.Time{}) {
-			t, err := time.Parse(d.timeFormat, value)
+			t, err := time.Parse(csvDecoder.timeFormat, value)
 			if err != nil {
 				return fmt.Errorf("time.Parse: %w", err)
 			}

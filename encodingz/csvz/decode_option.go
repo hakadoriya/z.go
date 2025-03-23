@@ -9,8 +9,8 @@ type (
 
 func (f csvDecoderOptionFunc) apply(d *CSVDecoder) { f(d) }
 
-func WithCSVDecoderOptionCSVReader(r *csv.Reader) CSVDecoderOption {
-	return csvDecoderOptionFunc(func(d *CSVDecoder) { d.r = r })
+func WithCSVDecoderOptionCSVReaderModifier(modifier func(r *csv.Reader) *csv.Reader) CSVDecoderOption {
+	return csvDecoderOptionFunc(func(d *CSVDecoder) { d.csvReader = modifier(d.csvReader) })
 }
 
 func WithCSVDecoderOptionTagName(tagName string) CSVDecoderOption {

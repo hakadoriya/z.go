@@ -537,7 +537,7 @@ func Nil(tb testing.TB, printFunc func(args ...any), value interface{}, formatAn
 		}
 	}()
 
-	if !(value == nil || reflect.ValueOf(value).IsNil()) {
+	if value != nil && !reflect.ValueOf(value).IsNil() {
 		var msg string
 		switch {
 		case len(formatAndArgs) == 0:

@@ -10,8 +10,8 @@ var (
 	ErrDecodeTargetMustBeSlice = errors.New("decode target must be a slice")
 	// ErrDecodeTargetMustBeStruct decode target must be a struct.
 	ErrDecodeTargetMustBeStruct = errors.New("decode target must be a struct")
-	// ErrFieldCannotBeSet field cannot be set.
-	ErrFieldCannotBeSet = errors.New("field cannot be set")
+	// ErrStructFieldCannotBeSet struct field cannot be set.
+	ErrStructFieldCannotBeSet = errors.New("struct field cannot be set; unexported field or field is not settable")
 	// ErrUnsupportedType unsupported type.
 	ErrUnsupportedType = errors.New("unsupported type")
 )

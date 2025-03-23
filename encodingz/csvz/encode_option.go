@@ -9,8 +9,8 @@ type (
 
 func (f csvEncoderOptionFunc) apply(d *CSVEncoder) { f(d) }
 
-func WithCSVEncoderOptionCSVWriter(w *csv.Writer) CSVEncoderOption {
-	return csvEncoderOptionFunc(func(d *CSVEncoder) { d.w = w })
+func WithCSVEncoderOptionCSVWriterModifier(modifier func(w *csv.Writer) *csv.Writer) CSVEncoderOption {
+	return csvEncoderOptionFunc(func(d *CSVEncoder) { d.csvWriter = modifier(d.csvWriter) })
 }
 
 func WithCSVEncoderOptionTagName(tagName string) CSVEncoderOption {
