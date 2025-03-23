@@ -24,8 +24,9 @@ type CSVEncoder struct {
 // NewCSVEncoder creates a new CSVEncoder
 func NewCSVEncoder(w io.Writer, opts ...CSVEncoderOption) *CSVEncoder {
 	e := &CSVEncoder{
-		w:       csv.NewWriter(w),
-		tagName: defaultCSVTagName,
+		w:          csv.NewWriter(w),
+		tagName:    defaultCSVTagName,
+		timeFormat: defaultTimeFormat,
 	}
 	for _, opt := range opts {
 		opt.apply(e)
@@ -34,6 +35,8 @@ func NewCSVEncoder(w io.Writer, opts ...CSVEncoderOption) *CSVEncoder {
 }
 
 // Encode encodes Go structs to CSV
+//
+//nolint:cyclop
 func (e *CSVEncoder) Encode(v interface{}) error {
 	rv := reflect.ValueOf(v)
 
@@ -63,11 +66,11 @@ func (e *CSVEncoder) Encode(v interface{}) error {
 	// Generate headers
 	headers, fieldIndices := e.extractHeaders(elemVal.Type())
 	if err := e.w.Write(headers); err != nil {
-		return err
+		return fmt.Errorf("error writing headers: %w", err)
 	}
 
 	// Encode each row
-	for i := 0; i < rv.Len(); i++ {
+	for i := range rv.Len() {
 		rowVal := rv.Index(i)
 		if rowVal.Kind() == reflect.Ptr {
 			rowVal = rowVal.Elem()
@@ -82,23 +85,21 @@ func (e *CSVEncoder) Encode(v interface{}) error {
 		}
 
 		if err := e.w.Write(record); err != nil {
-			return err
+			return fmt.Errorf("error writing record: %w", err)
 		}
 	}
 
 	e.w.Flush()
-	return e.w.Error()
+	return fmt.Errorf("error flushing writer: %w", e.w.Error())
 }
 
 // extractHeaders extracts CSV headers from struct tags
 func (e *CSVEncoder) extractHeaders(t reflect.Type) ([]string, []int) {
-	var headers []string
-	var fieldIndices []int
-
+	headers := make([]string, 0, t.NumField())
 	fieldMap := make(map[string]int)
 
 	// First collect all fields with tags
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 		tag := field.Tag.Get(e.tagName)
 		if tag == "" || tag == "-" {
@@ -110,7 +111,7 @@ func (e *CSVEncoder) extractHeaders(t reflect.Type) ([]string, []int) {
 	}
 
 	// Prepare field indices corresponding to headers
-	fieldIndices = make([]int, len(headers))
+	fieldIndices := make([]int, len(headers))
 	for i, header := range headers {
 		fieldIndices[i] = fieldMap[header]
 	}
@@ -119,6 +120,8 @@ func (e *CSVEncoder) extractHeaders(t reflect.Type) ([]string, []int) {
 }
 
 // fieldToString converts a field value to string
+//
+//nolint:cyclop
 func (e *CSVEncoder) fieldToString(field reflect.Value) string {
 	// Check for CSVMarshaler interface implementation
 	if field.CanInterface() {
@@ -145,8 +148,22 @@ func (e *CSVEncoder) fieldToString(field reflect.Value) string {
 	case reflect.Struct:
 		// Special handling for time.Time
 		if field.Type() == reflect.TypeOf(time.Time{}) {
+			//nolint:forcetypeassert
 			return field.Interface().(time.Time).Format(e.timeFormat)
 		}
+		return fmt.Sprintf("%v", field.Interface())
+	case reflect.Invalid,
+		reflect.Uintptr,
+		reflect.Complex64,
+		reflect.Complex128,
+		reflect.Array,
+		reflect.Chan,
+		reflect.Func,
+		reflect.Interface,
+		reflect.Map,
+		reflect.Pointer,
+		reflect.Slice,
+		reflect.UnsafePointer:
 		return fmt.Sprintf("%v", field.Interface())
 	default:
 		return fmt.Sprintf("%v", field.Interface())
