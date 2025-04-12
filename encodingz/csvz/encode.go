@@ -60,13 +60,13 @@ func (csvEncoder *CSVEncoder) Encode(v interface{}) error {
 	}
 
 	if elemVal.Kind() != reflect.Struct {
-		return ErrEncodeSourceMustBeStruct
+		return ErrEncodeSourceMustBeStructSlice
 	}
 
 	// Generate headers
 	headers, fieldIndices := csvEncoder.extractHeaders(elemVal.Type())
 	if err := csvEncoder.csvWriter.Write(headers); err != nil {
-		return fmt.Errorf("error writing headers: %w", err)
+		return fmt.Errorf("headers: csvEncoder.csvWriter.Write: %w", err)
 	}
 
 	// Encode each row
@@ -85,7 +85,7 @@ func (csvEncoder *CSVEncoder) Encode(v interface{}) error {
 		}
 
 		if err := csvEncoder.csvWriter.Write(record); err != nil {
-			return fmt.Errorf("csvEncoder.csvWriter.Write: %w", err)
+			return fmt.Errorf("row=%d: csvEncoder.csvWriter.Write: %w", i, err)
 		}
 	}
 

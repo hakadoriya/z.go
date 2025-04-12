@@ -62,7 +62,7 @@ func (csvDecoder *CSVDecoder) Decode(v interface{}) error {
 		elemType = elemType.Elem()
 	}
 	if elemType.Kind() != reflect.Struct {
-		return ErrDecodeTargetMustBeStruct
+		return ErrDecodeTargetMustBeStructSlice
 	}
 
 	// Read headers
@@ -175,6 +175,7 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 	}
 
 	const bitSize = 64
+
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(value)
@@ -219,17 +220,17 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 		} else {
 			return fmt.Errorf("type=%s: %w", field.Type().Name(), ErrUnsupportedType)
 		}
-	case reflect.Invalid,
-		reflect.Uintptr,
-		reflect.Array,
-		reflect.Chan,
-		reflect.Func,
-		reflect.Interface,
-		reflect.Map,
-		reflect.Pointer,
-		reflect.Slice,
-		reflect.UnsafePointer:
-		return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
+	// case reflect.Invalid,
+	// 	reflect.Uintptr,
+	// 	reflect.Array,
+	// 	reflect.Chan,
+	// 	reflect.Func,
+	// 	reflect.Interface,
+	// 	reflect.Map,
+	// 	reflect.Pointer,
+	// 	reflect.Slice,
+	// 	reflect.UnsafePointer:
+	// 	return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
 	default:
 		return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
 	}
