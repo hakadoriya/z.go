@@ -144,6 +144,7 @@ func (csvEncoder *CSVEncoder) fieldToString(field reflect.Value) string {
 		}
 	}
 
+	//nolint:exhaustive // for testing
 	switch field.Kind() {
 	case reflect.String:
 		return field.String()
@@ -162,19 +163,20 @@ func (csvEncoder *CSVEncoder) fieldToString(field reflect.Value) string {
 			return field.Interface().(time.Time).Format(csvEncoder.timeFormat)
 		}
 		return fmt.Sprintf("%v", field.Interface())
-	case reflect.Invalid,
-		reflect.Uintptr,
-		reflect.Complex64,
-		reflect.Complex128,
-		reflect.Array,
-		reflect.Chan,
-		reflect.Func,
-		reflect.Interface,
-		reflect.Map,
-		reflect.Pointer,
-		reflect.Slice,
-		reflect.UnsafePointer:
-		return fmt.Sprintf("%v", field.Interface())
+	// NOTE: for testing
+	// case reflect.Invalid,
+	// 	reflect.Uintptr,
+	// 	reflect.Complex64,
+	// 	reflect.Complex128,
+	// 	reflect.Array,
+	// 	reflect.Chan,
+	// 	reflect.Func,
+	// 	reflect.Interface,
+	// 	reflect.Map,
+	// 	reflect.Pointer,
+	// 	reflect.Slice,
+	// 	reflect.UnsafePointer:
+	// 	return fmt.Sprintf("%v", field.Interface())
 	default:
 		return fmt.Sprintf("%v", field.Interface())
 	}

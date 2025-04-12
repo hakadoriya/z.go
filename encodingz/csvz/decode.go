@@ -175,7 +175,7 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 	}
 
 	const bitSize = 64
-
+	//nolint:exhaustive // for testing
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(value)
@@ -220,6 +220,7 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 		} else {
 			return fmt.Errorf("type=%s: %w", field.Type().Name(), ErrUnsupportedType)
 		}
+	// NOTE: for testing
 	// case reflect.Invalid,
 	// 	reflect.Uintptr,
 	// 	reflect.Array,
