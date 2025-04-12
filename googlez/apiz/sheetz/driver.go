@@ -276,7 +276,7 @@ func (s *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driv
 		for _, requestedCol := range parsedColumns {
 			idx, ok := colMap[requestedCol]
 			if !ok {
-				return nil, fmt.Errorf("unknown column name: %q, allColumns: %v", requestedCol, columnsCommentFiltered)
+				return nil, fmt.Errorf("unknown column name: sheet=%q, column=%q", parsedQuery.sheetName, requestedCol)
 			}
 			columnsQueried = append(columnsQueried, requestedCol)
 			columnsQueriedIndexMap = append(columnsQueriedIndexMap, columnsCommentFilteredIndexMap[idx])
