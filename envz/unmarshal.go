@@ -113,7 +113,7 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 			continue
 		}
 
-		envKey, opts := parseTagValue(tagValue)
+		envKey, opts := c.parseTagValue(tagValue)
 		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", c.tagKey, envKey, opts))
 		if envKey == "" {
 			return fmt.Errorf("field=%s: tag=%s: tagValue=%s: %w", field.Name, c.tagKey, tagValue, ErrInvalidTagValue)
@@ -199,24 +199,40 @@ func (s *pkg) Getenv(key string) string {
 	return s.GetenvFunc(key)
 }
 
-//nolint:revive
-func map_[T, U any](src []T, f func(T) U) []U {
-	b := make([]U, len(src))
-	for i := range src {
-		b[i] = f(src[i])
-	}
-	return b
-}
-
-func parseTagValue(tagValue string) (envKey string, opts []string) {
+// parseTagValue is a function that splits the value of the tag into an environment variable key and options.
+//
+//	Example:
+//		tagValue="CIDRS,required,default=\"10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,169.254.0.0/16\"" -> envKey="CIDRS", opts=["required", "default=\"10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,169.254.0.0/16\""]
+func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []string) {
+	var optsString string
 	if i := strings.Index(tagValue, ","); i != -1 {
 		envKey = tagValue[:i]
-		opts = map_(strings.Split(tagValue[i+1:], ","), func(s string) string { return strings.TrimLeftFunc(s, unicode.IsSpace) })
+		optsString = tagValue[i+1:]
 	} else {
 		envKey = tagValue
 	}
 
-	return
+	var inQuotedDefault bool
+	var defaultString string
+	for _, s := range strings.Split(optsString, ",") {
+		if strings.HasPrefix(s, c.defaultKey+`="`) || inQuotedDefault {
+			inQuotedDefault = true
+			defaultString += s + ","
+			if strings.HasSuffix(s, `"`) {
+				opts = append(opts, strings.TrimFunc(defaultString[:len(defaultString)-1], unicode.IsSpace))
+				defaultString = ""
+				inQuotedDefault = false
+			}
+			Logger.Debug("defaultString=" + defaultString)
+			continue
+		}
+
+		opts = append(opts, strings.TrimFunc(s, unicode.IsSpace))
+	}
+
+	Logger.Debug("envKey=" + envKey + ", opts=[" + strings.Join(opts, ",") + "]")
+
+	return envKey, opts
 }
 
 func optsContainsRequired(c *unmarshalConfig, opts []string) bool {
@@ -232,6 +248,9 @@ func optsContainsRequired(c *unmarshalConfig, opts []string) bool {
 func optsContainsDefault(c *unmarshalConfig, opts []string) (defaultValue string, hasDefault bool) {
 	for _, opt := range opts {
 		Logger.Debug("opt=" + opt)
+		if strings.HasPrefix(opt, c.defaultKey+`="`) {
+			return strings.CutPrefix(strings.TrimSuffix(opt, `"`), c.defaultKey+`="`)
+		}
 		if strings.HasPrefix(opt, c.defaultKey+"=") {
 			return strings.CutPrefix(opt, c.defaultKey+"=")
 		}

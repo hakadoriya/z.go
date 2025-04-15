@@ -28,15 +28,16 @@ var testPkg = &pkg{GetenvFunc: func(key string) string {
 }}
 
 type testStruct struct {
-	Default     string   `env:"ENVZ_TEST_DEFAULT,default=defaultValue"`
-	Default2    string   `env:"ENVZ_TEST_DEFAULT2,default2=default2Value"`
-	String      string   `env:"ENVZ_TEST_STRING,default=world"`
-	Bytes       []byte   `env:"ENVZ_TEST_BYTES"`
-	StringSlice []string `env:"ENVZ_TEST_STRING_SLICE"`
-	Bool        bool     `env:"ENVZ_TEST_BOOL"`
-	Int64       int64    `env:"ENVZ_TEST_INT64"`
-	Uint64      uint64   `env:"ENVZ_TEST_UINT64"`
-	Float64     float64  `env:"ENVZ_TEST_FLOAT64"`
+	Default      string   `env:"ENVZ_TEST_DEFAULT,default=defaultValue"`
+	Default2     string   `env:"ENVZ_TEST_DEFAULT2,default2=default2Value"`
+	String       string   `env:"ENVZ_TEST_STRING,default=world"`
+	Bytes        []byte   `env:"ENVZ_TEST_BYTES"`
+	StringSlice  []string `env:"ENVZ_TEST_STRING_SLICE"`
+	StringSlice2 []string `env:"ENVZ_TEST_STRING_SLICE2,default=\"hello2,world2\""`
+	Bool         bool     `env:"ENVZ_TEST_BOOL"`
+	Int64        int64    `env:"ENVZ_TEST_INT64"`
+	Uint64       uint64   `env:"ENVZ_TEST_UINT64"`
+	Float64      float64  `env:"ENVZ_TEST_FLOAT64"`
 
 	TagNotSet string
 	TagEnv2   string `env2:"ENVZ_TEST_STRING"`
@@ -211,6 +212,16 @@ func Test_marshal(t *testing.T) {
 		actual2 := v.StringSlice[1]
 		if expected2 != actual2 {
 			t.Errorf("❌: expected(%s) != actual(%s)", expected2, actual2)
+		}
+		const expected3 = "hello2"
+		actual3 := v.StringSlice2[0]
+		if expected3 != actual3 {
+			t.Errorf("❌: expected(%s) != actual(%s)", expected3, actual3)
+		}
+		const expected4 = "world2"
+		actual4 := v.StringSlice2[1]
+		if expected4 != actual4 {
+			t.Errorf("❌: expected(%s) != actual(%s)", expected4, actual4)
 		}
 	})
 
