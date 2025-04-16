@@ -60,6 +60,11 @@ func (qc *queryerContext) QueryContext(ctx context.Context, dst interface{}, que
 	return qc.queryContext(rows, err, dst)
 }
 
+func (qc *queryerContext) QueryRowContext(ctx context.Context, dst interface{}, query string, args ...interface{}) error {
+	rows, err := qc.sqlQueryer.QueryContext(ctx, query, args...) //nolint:rowserrcheck
+	return qc.queryRowContext(rows, err, dst)
+}
+
 func (qc *queryerContext) queryContext(rows sqlRows, queryContextErr error, dst interface{}) (err error) {
 	if queryContextErr != nil {
 		return fmt.Errorf("QueryContext: %w", queryContextErr)
@@ -72,11 +77,6 @@ func (qc *queryerContext) queryContext(rows sqlRows, queryContextErr error, dst 
 	}()
 
 	return ScanRows(rows, qc.structTag, dst)
-}
-
-func (qc *queryerContext) QueryRowContext(ctx context.Context, dst interface{}, query string, args ...interface{}) error {
-	rows, err := qc.sqlQueryer.QueryContext(ctx, query, args...) //nolint:rowserrcheck
-	return qc.queryRowContext(rows, err, dst)
 }
 
 func (qc *queryerContext) queryRowContext(rows sqlRows, queryContextErr error, dst interface{}) (err error) {
