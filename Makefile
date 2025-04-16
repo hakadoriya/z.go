@@ -50,7 +50,7 @@ lint:  ## Run secretlint, go mod tidy, golangci-lint
 	go-mod-all tidy
 	# golangci-lint
 	# ref. https://golangci-lint.run/usage/linters/
-	golangci-lint run -c "${REPO_ROOT}/.golangci.yml" --fix --sort-results --verbose --timeout=5m
+	golangci-lint run -c "${REPO_ROOT}/.golangci.yml" --fix --verbose --timeout=5m
 	# diff
 	git diff --exit-code
 

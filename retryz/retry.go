@@ -198,18 +198,6 @@ func New(ctx context.Context, config *Config) *Retryer {
 	return config.Build(ctx)
 }
 
-func (r *Retryer) getInitialInterval() time.Duration {
-	return r.config.initialInterval
-}
-
-func (r *Retryer) truncateAtMaxInterval(d time.Duration) time.Duration {
-	if d > r.config.maxInterval {
-		return r.config.maxInterval
-	}
-
-	return d
-}
-
 func (r *Retryer) MaxRetries() (retries int) {
 	return r.config.maxRetries
 }
@@ -220,21 +208,6 @@ func (r *Retryer) Retries() (retries int) {
 
 func (r *Retryer) RetryAfter() (retryAfter time.Duration) {
 	return r.interval
-}
-
-func (r *Retryer) increment() {
-	if r.config.backoff == nil {
-		r.config.backoff = DefaultBackoff()
-	}
-
-	r.interval = r.truncateAtMaxInterval(r.config.backoff(r.getInitialInterval(), r.retries))
-
-	if r.config.jitter == nil {
-		r.config.jitter = DefaultJitter()
-	}
-	r.interval = r.config.jitter(r.interval)
-
-	r.retries++
 }
 
 func (r *Retryer) Err() (reason error) {
@@ -277,24 +250,30 @@ type doConfig struct {
 	retryableErrors   []error
 }
 
-type DoOption func(c *doConfig)
+type DoOption interface {
+	apply(c *doConfig)
+}
+
+type doOptionFunc func(c *doConfig)
+
+func (f doOptionFunc) apply(c *doConfig) { f(c) }
 
 func WithErrorHandler(f func(ctx context.Context, r *Retryer, err error)) DoOption {
-	return func(c *doConfig) {
+	return doOptionFunc(func(c *doConfig) {
 		c.errorHandler = f
-	}
+	})
 }
 
 func WithUnretryableErrors(errs ...error) DoOption {
-	return func(c *doConfig) {
+	return doOptionFunc(func(c *doConfig) {
 		c.unretryableErrors = append(c.unretryableErrors, errs...)
-	}
+	})
 }
 
 func WithRetryableErrors(errs ...error) DoOption {
-	return func(c *doConfig) {
+	return doOptionFunc(func(c *doConfig) {
 		c.retryableErrors = append(c.retryableErrors, errs...)
-	}
+	})
 }
 
 //nolint:cyclop
@@ -302,7 +281,7 @@ func (r *Retryer) Do(f func(ctx context.Context) error, opts ...DoOption) error 
 	c := new(doConfig)
 
 	for _, opt := range opts {
-		opt(c)
+		opt.apply(c)
 	}
 
 	var err error
@@ -334,4 +313,31 @@ LabelRetry:
 	}
 
 	return fmt.Errorf("%w: %w", r.Err(), err)
+}
+
+func (r *Retryer) getInitialInterval() time.Duration {
+	return r.config.initialInterval
+}
+
+func (r *Retryer) truncateAtMaxInterval(d time.Duration) time.Duration {
+	if d > r.config.maxInterval {
+		return r.config.maxInterval
+	}
+
+	return d
+}
+
+func (r *Retryer) increment() {
+	if r.config.backoff == nil {
+		r.config.backoff = DefaultBackoff()
+	}
+
+	r.interval = r.truncateAtMaxInterval(r.config.backoff(r.getInitialInterval(), r.retries))
+
+	if r.config.jitter == nil {
+		r.config.jitter = DefaultJitter()
+	}
+	r.interval = r.config.jitter(r.interval)
+
+	r.retries++
 }

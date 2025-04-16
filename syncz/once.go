@@ -20,6 +20,12 @@ func (o *Once) Do(f func() error) error {
 	return nil
 }
 
+func (o *Once) Reset() {
+	o.m.Lock()
+	defer o.m.Unlock()
+	atomic.StoreUint32(&o.i, 0)
+}
+
 func (o *Once) incomplete() bool {
 	return atomic.LoadUint32(&o.i) == 0
 }
@@ -39,10 +45,4 @@ func (o *Once) do(f func() error) error {
 	}
 
 	return nil
-}
-
-func (o *Once) Reset() {
-	o.m.Lock()
-	defer o.m.Unlock()
-	atomic.StoreUint32(&o.i, 0)
 }

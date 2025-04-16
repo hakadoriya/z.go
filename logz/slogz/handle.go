@@ -38,17 +38,6 @@ func NewHandler(w io.Writer, level slog.Leveler, opts ...HandlerOption) slog.Han
 	return s
 }
 
-func (s *slogHandler) clone() *slogHandler {
-	// Clone slogHandler
-	c := *s
-	// Clone slogHandlerOptions
-	slogOptions := *s.slogHandlerOptions
-	c.slogHandlerOptions = &slogOptions
-	// Clone slogHandler
-	c.slogHandler = s.slogHandler.WithAttrs(nil) // call WithAttrs with nil to clone slogHandler
-	return &c
-}
-
 func (s *slogHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return s.slogHandler.Enabled(ctx, level)
 }
@@ -96,4 +85,15 @@ func (s *slogHandler) WithGroup(name string) slog.Handler {
 	h := s.clone()
 	h.slogHandler = h.slogHandler.WithGroup(name)
 	return h
+}
+
+func (s *slogHandler) clone() *slogHandler {
+	// Clone slogHandler
+	c := *s
+	// Clone slogHandlerOptions
+	slogOptions := *s.slogHandlerOptions
+	c.slogHandlerOptions = &slogOptions
+	// Clone slogHandler
+	c.slogHandler = s.slogHandler.WithAttrs(nil) // call WithAttrs with nil to clone slogHandler
+	return &c
 }

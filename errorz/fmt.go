@@ -73,7 +73,7 @@ func newErrorf(c *errorfConfig) func(format string, a ...interface{}) error {
 		)
 
 		if !hasSuffixS && !hasSuffixV && !hasSuffixPlusV && !hasSuffixSharpV && !hasSuffixW {
-			return fmt.Errorf(format, a...) //nolint:goerr113
+			return fmt.Errorf(format, a...) //nolint:err113
 		}
 
 		prefix := format[:len(format)-len(suffixW)]
@@ -90,13 +90,13 @@ func newErrorf(c *errorfConfig) func(format string, a ...interface{}) error {
 		case error:
 			switch {
 			case hasSuffixS:
-				e.err = fmt.Errorf("%s", err) //nolint:errorlint,goerr113 // for compatibility with xerrors.Errorf
+				e.err = fmt.Errorf("%s", err) //nolint:errorlint,err113 // for compatibility with xerrors.Errorf
 			case hasSuffixV || hasSuffixPlusV || hasSuffixSharpV:
-				e.err = fmt.Errorf("%v", err) //nolint:errorlint,goerr113 // for compatibility with xerrors.Errorf
+				e.err = fmt.Errorf("%v", err) //nolint:errorlint,err113 // for compatibility with xerrors.Errorf
 			// case hasSuffixPlusV: // FIXME: support %+v
-			// 	e.err = fmt.Errorf("%+v", err) //nolint:errorlint,goerr113 // for compatibility with xerrors.Errorf
+			// 	e.err = fmt.Errorf("%+v", err) //nolint:errorlint,err113 // for compatibility with xerrors.Errorf
 			// case hasSuffixSharpV: // FIXME: support %#v
-			// 	e.err = fmt.Errorf("%+v", err) //nolint:errorlint,goerr113 // for compatibility with xerrors.Errorf
+			// 	e.err = fmt.Errorf("%+v", err) //nolint:errorlint,err113 // for compatibility with xerrors.Errorf
 			case hasSuffixW:
 				e.err = err
 			}
@@ -139,6 +139,59 @@ type formatter interface {
 	Unwrap() error
 }
 
+func (e *wrapError) Error() string {
+	return fmt.Sprint(e)
+}
+
+func (e *wrapError) Format(s fmt.State, verb rune) {
+	var err error = e
+loop:
+	for {
+		switch fe := err.(type) { //nolint:errorlint
+		case formatter:
+			fe.format(s, verb)
+			err = fe.Unwrap()
+		case fmt.Formatter:
+			fe.Format(s, verb)
+			break loop
+		default:
+			_, _ = fmt.Fprintf(s, fmt.FormatString(s, verb), fe)
+			break loop
+		}
+		if err == nil {
+			break loop
+		}
+	}
+}
+
+func (e *wrapError) GoString() string {
+	valType := reflect.TypeOf(*e)
+	val := reflect.ValueOf(*e)
+	elems := make([]string, valType.NumField())
+	for i := range valType.NumField() {
+		elems[i] = fmt.Sprintf("%s:%#v", valType.Field(i).Name, val.Field(i))
+	}
+	return fmt.Sprintf("&%s{%s}", valType, strings.Join(elems, ", "))
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}
+
+// FormatError is intended to be used as follows:
+//
+//	func (e *customError) Format(s fmt.State, verb rune) {
+//		errorz.FormatError(s, verb, e.Unwrap())
+//	}
+func FormatError(s fmt.State, verb rune, err error) {
+	if formatter, ok := err.(fmt.Formatter); ok {
+		formatter.Format(s, verb)
+		return
+	}
+
+	_, _ = fmt.Fprintf(s, fmt.FormatString(s, verb), err)
+}
+
 func (e *wrapError) writeCallers(w io.Writer) {
 	frames := runtime.CallersFrames(e.frame[:])
 	if _, ok := frames.Next(); !ok {
@@ -169,31 +222,6 @@ func (e *wrapError) writeCallers(w io.Writer) {
 			//                                  ^^
 			//         github.com/org/repo/pkg.go:123
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-		}
-	}
-}
-
-func (e *wrapError) Error() string {
-	return fmt.Sprint(e)
-}
-
-func (e *wrapError) Format(s fmt.State, verb rune) {
-	var err error = e
-loop:
-	for {
-		switch fe := err.(type) { //nolint:errorlint
-		case formatter:
-			fe.format(s, verb)
-			err = fe.Unwrap()
-		case fmt.Formatter:
-			fe.Format(s, verb)
-			break loop
-		default:
-			_, _ = fmt.Fprintf(s, fmt.FormatString(s, verb), fe)
-			break loop
-		}
-		if err == nil {
-			break loop
 		}
 	}
 }
@@ -240,32 +268,4 @@ Verb:
 			//      ^^     ^^     ^^
 		}
 	}
-}
-
-func (e *wrapError) GoString() string {
-	valType := reflect.TypeOf(*e)
-	val := reflect.ValueOf(*e)
-	elems := make([]string, valType.NumField())
-	for i := range valType.NumField() {
-		elems[i] = fmt.Sprintf("%s:%#v", valType.Field(i).Name, val.Field(i))
-	}
-	return fmt.Sprintf("&%s{%s}", valType, strings.Join(elems, ", "))
-}
-
-func (e *wrapError) Unwrap() error {
-	return e.err
-}
-
-// FormatError is intended to be used as follows:
-//
-//	func (e *customError) Format(s fmt.State, verb rune) {
-//		errorz.FormatError(s, verb, e.Unwrap())
-//	}
-func FormatError(s fmt.State, verb rune, err error) {
-	if formatter, ok := err.(fmt.Formatter); ok {
-		formatter.Format(s, verb)
-		return
-	}
-
-	_, _ = fmt.Fprintf(s, fmt.FormatString(s, verb), err)
 }
