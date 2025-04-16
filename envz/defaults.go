@@ -12,5 +12,5 @@ var (
 	DefaultTagKey      = "env"
 	DefaultRequiredKey = "required"
 	DefaultDefaultKey  = "default"
-	Logger             = slog.New(slogz.NewHandler(os.Stdout, slog.LevelDebug))
+	Logger             = slog.New(slogz.NewHandler(os.Stdout, slog.LevelInfo))
 )
