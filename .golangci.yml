@@ -1,14 +1,13 @@
+version: "2"
 run:
   modules-download-mode: readonly
   allow-parallel-runners: true
-
-# ref. https://golangci-lint.run/usage/linters/
 linters:
-  enable-all: true
+  # ref. https://golangci-lint.run/usage/linters/
+  default: all
   disable:
     - depguard # unnecessary
     - dupl # unnecessary
-    - gci # unnecessary
     - goconst # unnecessary
     - godot # unnecessary
     - godox # unnecessary
@@ -19,41 +18,61 @@ linters:
     - nonamedreturns # unnecessary
     - varnamelen # unnecessary
     - wsl # ignore "declarations should never be cuddled"
-
-linters-settings:
-  goimports:
-    local-prefixes: "github.com/hakadoriya/z.go"
-  wrapcheck:
-    ignoreSigs:
-      - func errors.New(text string) error
-      - func fmt.Errorf(format string, a ...any) error
-      - func fmt.Errorf(format string, a ...interface{}) error
-      - func github.com/hakadoriya/z.go/errorz.Errorf(format string, a ...interface{}) error
-
-issues:
-  exclude-rules:
-    - path: (.*_test\.go|/example/.*\.go)
-      linters:
-        - canonicalheader
-        - containedctx
-        - cyclop
-        - dupl
-        - dupword
-        - exhaustruct
-        - forcetypeassert
-        - funlen
-        - gochecknoglobals
-        - gocognit
-        - goconst
-        - gocyclo
-        - goerr113
-        - gosec
-        - maintidx
-        - noctx
-        - revive
-        - staticcheck
-        - stylecheck
-        - testpackage
-        - unused
-        - varnamelen
-        - wrapcheck
+  settings:
+    wrapcheck:
+      ignore-sigs:
+        - func errors.New(text string) error
+        - func fmt.Errorf(format string, a ...any) error
+        - func fmt.Errorf(format string, a ...interface{}) error
+        - func github.com/hakadoriya/z.go/errorz.Errorf(format string, a ...interface{}) error
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - canonicalheader
+          - containedctx
+          - cyclop
+          - dupl
+          - dupword
+          - err113
+          - exhaustruct
+          - forcetypeassert
+          - funlen
+          - gochecknoglobals
+          - gocognit
+          - goconst
+          - gocyclo
+          - gosec
+          - maintidx
+          - noctx
+          - revive
+          - staticcheck
+          - testpackage
+          - unused
+          - varnamelen
+          - wrapcheck
+        path: (.*_test\.go|/example/.*\.go)
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hakadoriya/z.go
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
