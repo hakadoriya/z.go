@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -119,10 +120,7 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 			return fmt.Errorf("field=%s: tag=%s: tagValue=%s: %w", field.Name, c.tagKey, tagValue, ErrInvalidTagValue)
 		}
 
-		required := false
-		if optsContainsRequired(c, opts) {
-			required = true
-		}
+		required := c.optsContainRequiredKey(opts)
 
 		envValue := iface.Getenv(envKey)
 		if envValue == "" {
@@ -130,7 +128,7 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 				return fmt.Errorf("field=%s: tag=%s: %s: %w", field.Name, c.tagKey, envKey, ErrRequiredEnvironmentVariableNotFound)
 			}
 
-			defaultValue, hasDefault := optsContainsDefault(c, opts)
+			defaultValue, hasDefault := c.optsContainDefaultKey(opts)
 			if !hasDefault {
 				// If the environment variable is not found and there is no default value, skip setting the field.
 				continue
@@ -235,17 +233,11 @@ func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []
 	return envKey, opts
 }
 
-func optsContainsRequired(c *unmarshalConfig, opts []string) bool {
-	for _, opt := range opts {
-		if opt == c.requiredKey {
-			return true
-		}
-	}
-
-	return false
+func (c *unmarshalConfig) optsContainRequiredKey(opts []string) bool {
+	return slices.Contains(opts, c.requiredKey)
 }
 
-func optsContainsDefault(c *unmarshalConfig, opts []string) (defaultValue string, hasDefault bool) {
+func (c *unmarshalConfig) optsContainDefaultKey(opts []string) (defaultValue string, hasDefault bool) {
 	for _, opt := range opts {
 		Logger.Debug("opt=" + opt)
 		if strings.HasPrefix(opt, c.defaultKey+`="`) {
