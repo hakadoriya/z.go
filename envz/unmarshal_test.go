@@ -29,11 +29,10 @@ var testPkg = &pkg{GetenvFunc: func(key string) string {
 
 type testStruct struct {
 	Default      string   `env:"ENVZ_TEST_DEFAULT,default=defaultValue"`
-	Default2     string   `env:"ENVZ_TEST_DEFAULT2,default2=default2Value"`
 	String       string   `env:"ENVZ_TEST_STRING,default=world"`
 	Bytes        []byte   `env:"ENVZ_TEST_BYTES"`
 	StringSlice  []string `env:"ENVZ_TEST_STRING_SLICE"`
-	StringSlice2 []string `env:"ENVZ_TEST_STRING_SLICE2,default=\"hello2,world2\""`
+	StringSlice2 []string `env:"ENVZ_TEST_STRING_SLICE2,default=\"\\\"\\\"\\\"hello2\\\"\\\"\\\",\\\"world,2\\\"\""`
 	Bool         bool     `env:"ENVZ_TEST_BOOL"`
 	Int64        int64    `env:"ENVZ_TEST_INT64"`
 	Uint64       uint64   `env:"ENVZ_TEST_UINT64"`
@@ -42,6 +41,10 @@ type testStruct struct {
 	TagNotSet string
 	TagEnv2   string `env2:"ENVZ_TEST_STRING"`
 	EnvNotSet string `env:"ENVZ_TEST_ENV_NOT_SET"`
+}
+
+type testStruct2 struct {
+	Default2 string `env:"ENVZ_TEST_DEFAULT2,default2=default2Value"`
 }
 
 type testStructRequired struct {
@@ -53,6 +56,7 @@ type testStructRequired2 struct {
 }
 
 type testStructCannotSet struct {
+	// テスト用
 	cannotSet string `env:"ENVZ_TEST_STRING"`
 }
 
@@ -68,6 +72,10 @@ type testStructFieldSliceTypeNotSupported struct {
 	NotSupported []struct{} `env:"ENVZ_TEST_STRING"`
 }
 
+type testStructDefaultHasInvalidCSV struct {
+	Default []string `env:"ENVZ_TEST_DEFAULT_HAS_INVALID_CSV,default=\"hello,\"world\""`
+}
+
 func TestMarshal(t *testing.T) {
 	t.Parallel()
 
@@ -77,7 +85,7 @@ func TestMarshal(t *testing.T) {
 		var v testStruct
 		err := Unmarshal(&v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = "defaultValue"
 		actual := v.Default
@@ -89,10 +97,10 @@ func TestMarshal(t *testing.T) {
 	t.Run("success,default2", func(t *testing.T) {
 		t.Parallel()
 
-		var v testStruct
+		var v testStruct2
 		err := Unmarshal(&v, WithUnmarshalOptionDefaultKey("default2"))
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = "default2Value"
 		actual := v.Default2
@@ -136,8 +144,8 @@ func TestMarshal(t *testing.T) {
 
 		var v testStructInvalidTagValue
 		err := Unmarshal(&v)
-		if !errors.Is(err, ErrInvalidTagValue) {
-			t.Errorf("❌: !errors.Is(err, ErrInvalidTagValue): %+v", err)
+		if !errors.Is(err, ErrInvalidTagValueEnvironmentVariableIsEmpty) {
+			t.Errorf("❌: !errors.Is(err, ErrInvalidTagValueEnvironmentVariableIsEmpty): %+v", err)
 		}
 	})
 
@@ -171,7 +179,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = "hello"
 		actual := v.String
@@ -186,7 +194,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = "world"
 		actual := string(v.Bytes)
@@ -201,7 +209,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected1 = "hello"
 		actual1 := v.StringSlice[0]
@@ -213,12 +221,15 @@ func Test_marshal(t *testing.T) {
 		if expected2 != actual2 {
 			t.Errorf("❌: expected(%s) != actual(%s)", expected2, actual2)
 		}
-		const expected3 = "hello2"
+		if len(v.StringSlice2) != 2 {
+			t.Fatalf("❌: expected(%d) != actual(%d): %s", 2, len(v.StringSlice2), strings.Join(v.StringSlice2, ","))
+		}
+		const expected3 = `"hello2"`
 		actual3 := v.StringSlice2[0]
 		if expected3 != actual3 {
 			t.Errorf("❌: expected(%s) != actual(%s)", expected3, actual3)
 		}
-		const expected4 = "world2"
+		const expected4 = `world,2`
 		actual4 := v.StringSlice2[1]
 		if expected4 != actual4 {
 			t.Errorf("❌: expected(%s) != actual(%s)", expected4, actual4)
@@ -231,7 +242,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = true
 		actual := v.Bool
@@ -246,7 +257,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = int64(128)
 		actual := v.Int64
@@ -261,7 +272,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = uint64(256)
 		actual := v.Uint64
@@ -276,7 +287,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v)
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 		const expected = 3.141592
 		actual := v.Float64
@@ -291,7 +302,7 @@ func Test_marshal(t *testing.T) {
 		var v testStruct
 		err := unmarshal(testPkg, &v, WithUnmarshalOptionTagKey("env2"))
 		if err != nil {
-			t.Errorf("❌: err != nil: %+v", err)
+			t.Fatalf("❌: err != nil: %+v", err)
 		}
 
 		const expected = "hello"
@@ -374,6 +385,26 @@ func Test_marshal(t *testing.T) {
 		err := unmarshal(testPkg, &v)
 		if !errors.Is(err, ErrStructFieldTypeNotSupported) {
 			t.Errorf("❌: !errors.Is(err, ErrStructFieldTypeNotSupported): %+v", err)
+		}
+	})
+
+	t.Run("error,ErrInvalidTagValueInvalidKey", func(t *testing.T) {
+		t.Parallel()
+
+		var v testStruct2
+		err := unmarshal(testPkg, &v)
+		if !errors.Is(err, ErrInvalidTagValueInvalidKey) {
+			t.Errorf("❌: !errors.Is(err, ErrInvalidTagValueInvalidKey): %+v", err)
+		}
+	})
+
+	t.Run("error,strconv.Unquote", func(t *testing.T) {
+		t.Parallel()
+
+		var v testStructDefaultHasInvalidCSV
+		err := unmarshal(testPkg, &v)
+		if err == nil || !strings.Contains(err.Error(), `extraneous or missing " in quoted-field`) {
+			t.Errorf("❌: !strings.Contains(err.Error(), "+`extraneous or missing " in quoted-field`+"): %+v", err)
 		}
 	})
 }

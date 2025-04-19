@@ -1,6 +1,7 @@
 package envz
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"reflect"
@@ -78,7 +79,7 @@ func Unmarshal(v interface{}, opts ...UnmarshalOption) error {
 	return unmarshal(&pkg{GetenvFunc: os.Getenv}, v, opts...)
 }
 
-//nolint:funlen,gocognit,cyclop
+//nolint:cyclop,funlen,gocognit
 func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error {
 	c := &unmarshalConfig{
 		tagKey:      DefaultTagKey,
@@ -114,11 +115,11 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 			continue
 		}
 
-		envKey, opts := c.parseTagValue(tagValue)
-		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", c.tagKey, envKey, opts))
-		if envKey == "" {
-			return fmt.Errorf("field=%s: tag=%s: tagValue=%s: %w", field.Name, c.tagKey, tagValue, ErrInvalidTagValue)
+		envKey, opts, err := c.parseTagValue(tagValue)
+		if err != nil {
+			return fmt.Errorf("field=%s: tag=%s: %w", field.Name, c.tagKey, err)
 		}
+		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", c.tagKey, envKey, opts))
 
 		required := c.optsContainRequiredKey(opts)
 
@@ -172,7 +173,12 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 			case reflect.Uint8: // []byte
 				fieldValue.SetBytes([]byte(envValue))
 			case reflect.String: // []string
-				fieldValue.Set(reflect.ValueOf(strings.Split(envValue, ",")))
+				csvReader := csv.NewReader(strings.NewReader(envValue))
+				records, err := csvReader.Read()
+				if err != nil {
+					return fmt.Errorf("field=%s: tag=%s: value=%s: csv.Read: %w", field.Name, c.tagKey, envValue, err)
+				}
+				fieldValue.Set(reflect.ValueOf(records))
 			default:
 				return fmt.Errorf("field=%s: tag=%s: %T: %w", field.Name, c.tagKey, v, ErrStructFieldTypeNotSupported)
 			}
@@ -201,7 +207,9 @@ func (s *pkg) Getenv(key string) string {
 //
 //	Example:
 //		tagValue="CIDRS,required,default=\"10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,169.254.0.0/16\"" -> envKey="CIDRS", opts=["required", "default=\"10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,169.254.0.0/16\""]
-func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []string) {
+//
+//nolint:cyclop
+func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []string, err error) {
 	var optsString string
 	if i := strings.Index(tagValue, ","); i != -1 {
 		envKey = tagValue[:i]
@@ -210,27 +218,40 @@ func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []
 		envKey = tagValue
 	}
 
+	if envKey == "" {
+		return "", nil, fmt.Errorf("tagValue=%s: %w", tagValue, ErrInvalidTagValueEnvironmentVariableIsEmpty)
+	}
+
 	var inQuotedDefault bool
 	var defaultString string
 	for _, s := range strings.Split(optsString, ",") {
-		if strings.HasPrefix(s, c.defaultKey+`="`) || inQuotedDefault {
+		Logger.Debug("key=" + s)
+		switch {
+		case strings.HasPrefix(s, c.defaultKey+`="`) || inQuotedDefault: // default="value"
 			inQuotedDefault = true
 			defaultString += s + ","
-			if strings.HasSuffix(s, `"`) {
+			if strings.HasSuffix(s, `"`) && !strings.HasSuffix(s, `\"`) {
 				opts = append(opts, strings.TrimFunc(defaultString[:len(defaultString)-1], unicode.IsSpace))
 				defaultString = ""
 				inQuotedDefault = false
 			}
 			Logger.Debug("defaultString=" + defaultString)
 			continue
+		case strings.HasPrefix(s, c.defaultKey+"="): // default=value
+			opts = append(opts, strings.TrimFunc(s, unicode.IsSpace))
+			continue
+		case c.requiredKey == s: // required
+			opts = append(opts, strings.TrimFunc(s, unicode.IsSpace))
+		case s == "":
+			continue
+		default:
+			return "", nil, fmt.Errorf("tagValue=%s, key=%s: %w", tagValue, s, ErrInvalidTagValueInvalidKey)
 		}
-
-		opts = append(opts, strings.TrimFunc(s, unicode.IsSpace))
 	}
 
 	Logger.Debug("envKey=" + envKey + ", opts=[" + strings.Join(opts, ",") + "]")
 
-	return envKey, opts
+	return envKey, opts, nil
 }
 
 func (c *unmarshalConfig) optsContainRequiredKey(opts []string) bool {
@@ -241,7 +262,14 @@ func (c *unmarshalConfig) optsContainDefaultKey(opts []string) (defaultValue str
 	for _, opt := range opts {
 		Logger.Debug("opt=" + opt)
 		if strings.HasPrefix(opt, c.defaultKey+`="`) {
-			return strings.CutPrefix(strings.TrimSuffix(opt, `"`), c.defaultKey+`="`)
+			v, has := strings.CutPrefix(opt, c.defaultKey+`=`)
+			Logger.Debug("v=" + v)
+			unquoted, err := strconv.Unquote(v)
+			if err != nil {
+				return v, has
+			}
+			Logger.Debug("unquoted=" + unquoted)
+			return unquoted, has
 		}
 		if strings.HasPrefix(opt, c.defaultKey+"=") {
 			return strings.CutPrefix(opt, c.defaultKey+"=")
