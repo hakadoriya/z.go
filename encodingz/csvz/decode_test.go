@@ -33,7 +33,7 @@ func TestCSVDecoder_Decode(t *testing.T) {
 	}{
 		{
 			name:   "success,normal",
-			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,user_0,20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
+			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,\"user,0\",20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err != nil {
@@ -42,13 +42,13 @@ func TestCSVDecoder_Decode(t *testing.T) {
 			},
 			argTarget: &[]*testStruct{},
 			expected: &[]*testStruct{
-				{UserID: 0, Username: "user_0", Age: 20, IsActive: true, Point: 100.1, CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 0, Username: "user,0", Age: 20, IsActive: true, Point: 100.1, CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
 				{UserID: 1, Username: "user_1", Age: 21, IsActive: false, Point: 200.2, CreatedAt: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)},
 			},
 		},
 		{
 			name:   "failure,ErrDecodeTargetMustBeNonNilPointer",
-			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,user_0,20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
+			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,\"user,0\",20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrDecodeTargetMustBeNonNilPointer) {
@@ -60,7 +60,7 @@ func TestCSVDecoder_Decode(t *testing.T) {
 		},
 		{
 			name:   "failure,ErrDecodeTargetMustBeSlice",
-			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,user_0,20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
+			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,\"user,0\",20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrDecodeTargetMustBeSlice) {
@@ -72,7 +72,7 @@ func TestCSVDecoder_Decode(t *testing.T) {
 		},
 		{
 			name:   "failure,ErrDecodeTargetMustBeStructSlice",
-			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,user_0,20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
+			argCSV: "user_id,username,age,is_active,point,created_at,etc\n0,\"user,0\",20,true,100.1,2025-01-01T00:00:00Z,etc_0\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z,etc_1",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrDecodeTargetMustBeStructSlice) {
