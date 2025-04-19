@@ -21,7 +21,7 @@ func TestCSVEncoder_Encode(t *testing.T) {
 		{
 			name: "success,normal",
 			argSlice: &[]*testStruct{
-				{UserID: 0, Username: "user_0", Age: 20, IsActive: true, Point: 100.1, CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 0, Username: "user,0", Age: 20, IsActive: true, Point: 100.1, CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
 				{UserID: 1, Username: "user_1", Age: 21, IsActive: false, Point: 200.2, CreatedAt: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)},
 			},
 			requireFunc: func(t *testing.T, name string, err error) {
@@ -30,7 +30,7 @@ func TestCSVEncoder_Encode(t *testing.T) {
 					t.Fatalf("❌: name=%s: err != nil: %v", name, err)
 				}
 			},
-			expected: "user_id,username,age,is_active,point,created_at\n0,user_0,20,true,100.1,2025-01-01T00:00:00Z\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z\n",
+			expected: "user_id,username,age,is_active,point,created_at\n0,\"user,0\",20,true,100.1,2025-01-01T00:00:00Z\n1,user_1,21,false,200.2,2025-01-02T00:00:00Z\n",
 		},
 		{
 			name:     "success,empty_slice",
@@ -72,7 +72,7 @@ func TestCSVEncoder_Encode(t *testing.T) {
 				}),
 			},
 			argSlice: &[]*testStruct{
-				{UserID: 0, Username: "user_0", CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
+				{UserID: 0, Username: "user,0", CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)},
 				{UserID: 1, Username: "user_1", CreatedAt: time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)},
 			},
 			requireFunc: func(t *testing.T, name string, err error) {
