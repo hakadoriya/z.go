@@ -13,4 +13,5 @@ var (
 	DefaultRequiredKey = "required"
 	DefaultDefaultKey  = "default"
 	Logger             = slog.New(slogz.NewHandler(os.Stdout, slog.LevelInfo))
+	// Logger = slog.New(slogz.NewHandler(os.Stdout, slog.LevelDebug))
 )
