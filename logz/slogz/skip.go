@@ -5,7 +5,9 @@ import "context"
 type ctxKeyAddCallerSkip struct{}
 
 func AddCallerSkip(ctx context.Context, skip int) context.Context {
-	return context.WithValue(ctx, ctxKeyAddCallerSkip{}, skip)
+	currentSkip := addCallerSkip(ctx)
+
+	return context.WithValue(ctx, ctxKeyAddCallerSkip{}, currentSkip+skip)
 }
 
 func addCallerSkip(ctx context.Context) int {
