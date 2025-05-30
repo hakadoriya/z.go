@@ -260,7 +260,7 @@ func TestRetryer_Do(t *testing.T) {
 		if err == nil {
 			t.Errorf("❌: err == nil")
 		}
-		const expectErr = "retry: unretryable error: unexpected EOF"
+		const expectErr = "retryz: unretryable error: unexpected EOF"
 		if !strings.Contains(err.Error(), expectErr) {
 			t.Errorf("❌: err not contain: `%s` != `%v`", expectErr, err)
 		}
@@ -289,7 +289,7 @@ func TestRetryer_Do(t *testing.T) {
 		if err == nil {
 			t.Errorf("❌: err == nil")
 		}
-		const expectErr = "retry: unretryable error: unexpected EOF"
+		const expectErr = "retryz: unretryable error: unexpected EOF"
 		if !strings.Contains(err.Error(), expectErr) {
 			t.Errorf("❌: err not contain: `%s` != `%v`", expectErr, err)
 		}
