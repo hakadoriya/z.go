@@ -214,10 +214,13 @@ func (r *Retryer) Err() (reason error) {
 	return r.reason
 }
 
+const (
+	ErrUnretryableErrorPrefix = "retryz: unretryable error"
+)
+
 var (
-	ErrMaxRetriesExceeded = errors.New("retry: max retries exceeded")
-	ErrTimeoutExceeded    = errors.New("retry: timeout exceeded")
-	ErrUnretryableError   = errors.New("retry: unretryable error")
+	ErrMaxRetriesExceeded = errors.New("retryz: max retries exceeded")
+	ErrTimeoutExceeded    = errors.New("retryz: timeout exceeded")
 )
 
 func (r *Retryer) Retry() bool {
@@ -297,7 +300,7 @@ LabelRetry:
 		if len(c.unretryableErrors) > 0 {
 			for _, unretryableErr := range c.unretryableErrors {
 				if errors.Is(err, unretryableErr) {
-					return fmt.Errorf("%w: %w", ErrUnretryableError, err)
+					return fmt.Errorf(ErrUnretryableErrorPrefix+": %w", err)
 				}
 			}
 			// continue LabelRetry NOTE: Do not continue here (considering the case where `c.retryableErrors` is set).
@@ -308,11 +311,11 @@ LabelRetry:
 					continue LabelRetry
 				}
 			}
-			return fmt.Errorf("%w: %w", ErrUnretryableError, err)
+			return fmt.Errorf(ErrUnretryableErrorPrefix+": %w", err)
 		}
 	}
 
-	return fmt.Errorf("%w: %w", r.Err(), err)
+	return fmt.Errorf("%s: %w", r.Err().Error(), err)
 }
 
 func (r *Retryer) getInitialInterval() time.Duration {
