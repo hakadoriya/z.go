@@ -16,9 +16,10 @@ type CSVUnmarshaler interface {
 
 // CSVDecoder is a decoder for decoding CSV into Go structs
 type CSVDecoder struct {
-	csvReader  *csv.Reader
-	tagName    string
-	timeFormat string
+	csvReader         *csv.Reader
+	tagName           string
+	timeFormat        string
+	setFieldValueFunc func(refrectType reflect.StructField, refrectValue reflect.Value, value string) (ok bool)
 
 	headers  []string
 	fieldMap map[string]int // Mapping from header names to indices
@@ -138,8 +139,8 @@ func (csvDecoder *CSVDecoder) mapFields(structVal reflect.Value, record []string
 		}
 
 		// Convert string to appropriate type and set field
-		if err := csvDecoder.setFieldValue(fieldValue, record[colIdx]); err != nil {
-			return fmt.Errorf("error setting field %s: %w", fieldType.Name, err)
+		if err := csvDecoder.setFieldValue(fieldType, fieldValue, record[colIdx]); err != nil {
+			return fmt.Errorf("csvDecoder.setFieldValue: name=%s: %w", fieldType.Name, err)
 		}
 	}
 
@@ -149,8 +150,14 @@ func (csvDecoder *CSVDecoder) mapFields(structVal reflect.Value, record []string
 // setFieldValue converts a string value to the appropriate type and sets it to the field
 //
 //nolint:cyclop,funlen
-func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) error {
-	if !field.CanSet() {
+func (csvDecoder *CSVDecoder) setFieldValue(refrectType reflect.StructField, refrectValue reflect.Value, value string) error {
+	if csvDecoder.setFieldValueFunc != nil {
+		if ok := csvDecoder.setFieldValueFunc(refrectType, refrectValue, value); ok {
+			return nil
+		}
+	}
+
+	if !refrectValue.CanSet() {
 		return ErrStructFieldCannotBeSet
 	}
 
@@ -162,12 +169,12 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 	// Check for CSVUnmarshaler interface implementation
 	//
 	//nolint:nestif
-	if field.CanAddr() {
-		pv := field.Addr()
+	if refrectValue.CanAddr() {
+		pv := refrectValue.Addr()
 		if pv.CanInterface() {
 			if u, ok := pv.Interface().(CSVUnmarshaler); ok {
 				if err := u.UnmarshalCSV(value); err != nil {
-					return fmt.Errorf("error unmarshalling field %s: %w", field.Type().Name(), err)
+					return fmt.Errorf("error unmarshalling field %s: %w", refrectValue.Type().Name(), err)
 				}
 				return nil
 			}
@@ -176,49 +183,49 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 
 	const bitSize = 64
 	//nolint:exhaustive // for testing
-	switch field.Kind() {
+	switch refrectValue.Kind() {
 	case reflect.String:
-		field.SetString(value)
+		refrectValue.SetString(value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i, err := strconv.ParseInt(value, 10, bitSize)
 		if err != nil {
 			return fmt.Errorf("strconv.ParseInt: %w", err)
 		}
-		field.SetInt(i)
+		refrectValue.SetInt(i)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i, err := strconv.ParseUint(value, 10, bitSize)
 		if err != nil {
 			return fmt.Errorf("strconv.ParseUint: %w", err)
 		}
-		field.SetUint(i)
+		refrectValue.SetUint(i)
 	case reflect.Float32, reflect.Float64:
 		f, err := strconv.ParseFloat(value, bitSize)
 		if err != nil {
 			return fmt.Errorf("strconv.ParseFloat: %w", err)
 		}
-		field.SetFloat(f)
+		refrectValue.SetFloat(f)
 	case reflect.Complex64, reflect.Complex128:
 		c, err := strconv.ParseComplex(value, bitSize)
 		if err != nil {
 			return fmt.Errorf("strconv.ParseComplex: %w", err)
 		}
-		field.SetComplex(c)
+		refrectValue.SetComplex(c)
 	case reflect.Bool:
 		b, err := strconv.ParseBool(value)
 		if err != nil {
 			return fmt.Errorf("strconv.ParseBool: %w", err)
 		}
-		field.SetBool(b)
+		refrectValue.SetBool(b)
 	case reflect.Struct:
 		// time.Time's special handling
-		if field.Type() == reflect.TypeOf(time.Time{}) {
+		if refrectValue.Type() == reflect.TypeOf(time.Time{}) {
 			t, err := time.Parse(csvDecoder.timeFormat, value)
 			if err != nil {
 				return fmt.Errorf("time.Parse: %w", err)
 			}
-			field.Set(reflect.ValueOf(t))
+			refrectValue.Set(reflect.ValueOf(t))
 		} else {
-			return fmt.Errorf("type=%s: %w", field.Type().Name(), ErrUnsupportedType)
+			return fmt.Errorf("type=%s: %w", refrectValue.Type().Name(), ErrUnsupportedType)
 		}
 	// NOTE: for testing
 	// case reflect.Invalid,
@@ -233,7 +240,7 @@ func (csvDecoder *CSVDecoder) setFieldValue(field reflect.Value, value string) e
 	// 	reflect.UnsafePointer:
 	// 	return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
 	default:
-		return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
+		return fmt.Errorf("kind=%s: %w", refrectValue.Kind(), ErrUnsupportedType)
 	}
 
 	return nil
