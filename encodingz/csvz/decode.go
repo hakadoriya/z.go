@@ -227,6 +227,13 @@ func (csvDecoder *CSVDecoder) setFieldValue(refrectType reflect.StructField, ref
 		} else {
 			return fmt.Errorf("type=%s: %w", refrectValue.Type().Name(), ErrUnsupportedType)
 		}
+	case reflect.Pointer:
+		if refrectValue.IsNil() {
+			refrectValue.Set(reflect.New(refrectValue.Type().Elem()))
+		}
+		if err := csvDecoder.setFieldValue(refrectType, refrectValue.Elem(), value); err != nil {
+			return fmt.Errorf("csvDecoder.setFieldValue: name=%s: %w", refrectType.Name, err)
+		}
 	// NOTE: for testing
 	// case reflect.Invalid,
 	// 	reflect.Uintptr,
@@ -235,7 +242,6 @@ func (csvDecoder *CSVDecoder) setFieldValue(refrectType reflect.StructField, ref
 	// 	reflect.Func,
 	// 	reflect.Interface,
 	// 	reflect.Map,
-	// 	reflect.Pointer,
 	// 	reflect.Slice,
 	// 	reflect.UnsafePointer:
 	// 	return fmt.Errorf("kind=%s: %w", field.Kind(), ErrUnsupportedType)
