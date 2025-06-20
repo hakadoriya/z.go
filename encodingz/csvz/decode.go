@@ -28,11 +28,13 @@ type CSVDecoder struct {
 // NewCSVDecoder creates a new CSVDecoder
 func NewCSVDecoder(r io.Reader, opts ...CSVDecoderOption) *CSVDecoder {
 	d := &CSVDecoder{
-		csvReader:  csv.NewReader(r),
-		tagName:    defaultCSVTagName,
-		timeFormat: defaultTimeFormat,
-		headers:    make([]string, 0),
-		fieldMap:   make(map[string]int),
+		csvReader:         csv.NewReader(r),
+		tagName:           defaultCSVTagName,
+		timeFormat:        defaultTimeFormat,
+		setFieldValueFunc: nil,
+
+		headers:  make([]string, 0),
+		fieldMap: make(map[string]int),
 	}
 	for _, opt := range opts {
 		opt.apply(d)
@@ -149,7 +151,7 @@ func (csvDecoder *CSVDecoder) mapFields(structVal reflect.Value, record []string
 
 // setFieldValue converts a string value to the appropriate type and sets it to the field
 //
-//nolint:cyclop,funlen
+//nolint:cyclop,funlen,gocognit
 func (csvDecoder *CSVDecoder) setFieldValue(refrectType reflect.StructField, refrectValue reflect.Value, value string) error {
 	if csvDecoder.setFieldValueFunc != nil {
 		if ok := csvDecoder.setFieldValueFunc(refrectType, refrectValue, value); ok {

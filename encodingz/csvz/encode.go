@@ -25,9 +25,10 @@ type CSVEncoder struct {
 // NewCSVEncoder creates a new CSVEncoder
 func NewCSVEncoder(w io.Writer, opts ...CSVEncoderOption) *CSVEncoder {
 	e := &CSVEncoder{
-		csvWriter:  csv.NewWriter(w),
-		tagName:    defaultCSVTagName,
-		timeFormat: defaultTimeFormat,
+		csvWriter:         csv.NewWriter(w),
+		tagName:           defaultCSVTagName,
+		timeFormat:        defaultTimeFormat,
+		fieldToStringFunc: nil,
 	}
 	for _, opt := range opts {
 		opt.apply(e)
