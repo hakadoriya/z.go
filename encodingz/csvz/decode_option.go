@@ -1,6 +1,9 @@
 package csvz
 
-import "encoding/csv"
+import (
+	"encoding/csv"
+	"reflect"
+)
 
 type (
 	CSVDecoderOption     interface{ apply(d *CSVDecoder) }
@@ -19,4 +22,8 @@ func WithCSVDecoderOptionTagName(tagName string) CSVDecoderOption {
 
 func WithCSVDecoderOptionTimeFormat(timeFormat string) CSVDecoderOption {
 	return csvDecoderOptionFunc(func(d *CSVDecoder) { d.timeFormat = timeFormat })
+}
+
+func WithCSVDecoderOptionSetFieldValueFunc(f func(refrectType reflect.StructField, refrectValue reflect.Value, value string) (ok bool)) CSVDecoderOption {
+	return csvDecoderOptionFunc(func(d *CSVDecoder) { d.setFieldValueFunc = f })
 }

@@ -110,18 +110,20 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name          string
-		argCSVDecoder *CSVDecoder
-		argField      reflect.Value
-		argValue      string
-		requireFunc   func(t *testing.T, name string, err error)
-		expected      any
+		name            string
+		argCSVDecoder   *CSVDecoder
+		argReflectField reflect.StructField
+		argReflectValue reflect.Value
+		argValue        string
+		requireFunc     func(t *testing.T, name string, err error)
+		expected        any
 	}{
 		{
-			name:          "failure,ErrStructFieldCannotBeSet",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(testStruct{})),
-			argValue:      "a",
+			name:            "failure,ErrStructFieldCannotBeSet",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(testStruct{})),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrStructFieldCannotBeSet) {
@@ -131,10 +133,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: &testStruct{},
 		},
 		{
-			name:          "failure,int64",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(int64(0))).Elem(),
-			argValue:      "a",
+			name:            "failure,int64",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(int64(0))).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "strconv.ParseInt") {
@@ -144,10 +147,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: int64(0),
 		},
 		{
-			name:          "failure,uint64",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(uint64(0))).Elem(),
-			argValue:      "a",
+			name:            "failure,uint64",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(uint64(0))).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "strconv.ParseUint") {
@@ -157,10 +161,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: uint64(0),
 		},
 		{
-			name:          "failure,float64",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(float64(0))).Elem(),
-			argValue:      "a",
+			name:            "failure,float64",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(float64(0))).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "strconv.ParseFloat") {
@@ -170,10 +175,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: float64(0),
 		},
 		{
-			name:          "failure,bool",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(false)).Elem(),
-			argValue:      "a",
+			name:            "failure,bool",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(false)).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "strconv.ParseBool") {
@@ -183,10 +189,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:          "failure,time.Time",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(time.Time{})).Elem(),
-			argValue:      "a",
+			name:            "failure,time.Time",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(time.Time{})).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "time.Parse") {
@@ -196,10 +203,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: time.Time{},
 		},
 		{
-			name:          "success,complex128",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(complex(0, 0))).Elem(),
-			argValue:      "100i",
+			name:            "success,complex128",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(complex(0, 0))).Elem(),
+			argValue:        "100i",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err != nil {
@@ -209,10 +217,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: complex(0, 100),
 		},
 		{
-			name:          "failure,complex128",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(complex(0, 0))).Elem(),
-			argValue:      "a",
+			name:            "failure,complex128",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(complex(0, 0))).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if err == nil || !strings.Contains(err.Error(), "strconv.ParseComplex") {
@@ -222,10 +231,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: complex(0, 0),
 		},
 		{
-			name:          "failure,ErrUnsupportedType",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(struct{}{})).Elem(),
-			argValue:      "a",
+			name:            "failure,ErrUnsupportedType",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(struct{}{})).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrUnsupportedType) {
@@ -235,10 +245,11 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 			expected: struct{}{},
 		},
 		{
-			name:          "failure,ErrUnsupportedType",
-			argCSVDecoder: &CSVDecoder{},
-			argField:      reflect.New(reflect.TypeOf(chan int(nil))).Elem(),
-			argValue:      "a",
+			name:            "failure,ErrUnsupportedType",
+			argCSVDecoder:   &CSVDecoder{},
+			argReflectField: reflect.StructField{},
+			argReflectValue: reflect.New(reflect.TypeOf(chan int(nil))).Elem(),
+			argValue:        "a",
 			requireFunc: func(t *testing.T, name string, err error) {
 				t.Helper()
 				if !errors.Is(err, ErrUnsupportedType) {
@@ -253,10 +264,10 @@ func TestCSVDecoder_setFieldValue(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.argCSVDecoder.setFieldValue(tt.argField, tt.argValue)
+			err := tt.argCSVDecoder.setFieldValue(tt.argReflectField, tt.argReflectValue, tt.argValue)
 			tt.requireFunc(t, tt.name, err)
-			if !reflect.DeepEqual(tt.expected, tt.argField.Interface()) {
-				t.Errorf("❌: name=%s: expected(%q) != actual(%q)", tt.name, tt.expected, tt.argField.Interface())
+			if !reflect.DeepEqual(tt.expected, tt.argReflectValue.Interface()) {
+				t.Errorf("❌: name=%s: expected(%q) != actual(%q)", tt.name, tt.expected, tt.argReflectValue.Interface())
 			}
 		})
 	}

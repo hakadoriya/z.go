@@ -1,6 +1,9 @@
 package csvz
 
-import "encoding/csv"
+import (
+	"encoding/csv"
+	"reflect"
+)
 
 type (
 	CSVEncoderOption     interface{ apply(d *CSVEncoder) }
@@ -19,4 +22,8 @@ func WithCSVEncoderOptionTagName(tagName string) CSVEncoderOption {
 
 func WithCSVEncoderOptionTimeFormat(timeFormat string) CSVEncoderOption {
 	return csvEncoderOptionFunc(func(d *CSVEncoder) { d.timeFormat = timeFormat })
+}
+
+func WithCSVEncoderOptionFieldToStringFunc(f func(field reflect.Value) (csvValue string, ok bool)) CSVEncoderOption {
+	return csvEncoderOptionFunc(func(e *CSVEncoder) { e.fieldToStringFunc = f })
 }

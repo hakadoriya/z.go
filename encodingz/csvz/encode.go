@@ -16,17 +16,19 @@ type CSVMarshaler interface {
 
 // CSVEncoder is an encoder for encoding Go structs to CSV
 type CSVEncoder struct {
-	csvWriter  *csv.Writer
-	tagName    string
-	timeFormat string
+	csvWriter         *csv.Writer
+	tagName           string
+	timeFormat        string
+	fieldToStringFunc func(field reflect.Value) (csvValue string, ok bool)
 }
 
 // NewCSVEncoder creates a new CSVEncoder
 func NewCSVEncoder(w io.Writer, opts ...CSVEncoderOption) *CSVEncoder {
 	e := &CSVEncoder{
-		csvWriter:  csv.NewWriter(w),
-		tagName:    defaultCSVTagName,
-		timeFormat: defaultTimeFormat,
+		csvWriter:         csv.NewWriter(w),
+		tagName:           defaultCSVTagName,
+		timeFormat:        defaultTimeFormat,
+		fieldToStringFunc: nil,
 	}
 	for _, opt := range opts {
 		opt.apply(e)
@@ -133,6 +135,13 @@ func (csvEncoder *CSVEncoder) extractHeaders(t reflect.Type) ([]string, []int) {
 //
 //nolint:cyclop
 func (csvEncoder *CSVEncoder) fieldToString(field reflect.Value) string {
+	if csvEncoder.fieldToStringFunc != nil {
+		str, ok := csvEncoder.fieldToStringFunc(field)
+		if ok {
+			return str
+		}
+	}
+
 	// Check for CSVMarshaler interface implementation
 	if field.CanInterface() {
 		if m, ok := field.Interface().(CSVMarshaler); ok {
@@ -163,6 +172,11 @@ func (csvEncoder *CSVEncoder) fieldToString(field reflect.Value) string {
 			return field.Interface().(time.Time).Format(csvEncoder.timeFormat)
 		}
 		return fmt.Sprintf("%v", field.Interface())
+	case reflect.Pointer:
+		if field.IsNil() {
+			return ""
+		}
+		return csvEncoder.fieldToString(field.Elem())
 	// NOTE: for testing
 	// case reflect.Invalid,
 	// 	reflect.Uintptr,
@@ -173,7 +187,6 @@ func (csvEncoder *CSVEncoder) fieldToString(field reflect.Value) string {
 	// 	reflect.Func,
 	// 	reflect.Interface,
 	// 	reflect.Map,
-	// 	reflect.Pointer,
 	// 	reflect.Slice,
 	// 	reflect.UnsafePointer:
 	// 	return fmt.Sprintf("%v", field.Interface())
