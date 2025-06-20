@@ -12,7 +12,7 @@ func Test_addCallerSkip(t *testing.T) {
 	t.Run("error,0", func(t *testing.T) {
 		t.Parallel()
 
-		actual := addCallerSkip(nil)
+		actual := contextAddCallerSkip(nil)
 		requirez.Equal(t, 0, actual)
 	})
 }
