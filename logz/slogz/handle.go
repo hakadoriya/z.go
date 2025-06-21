@@ -6,43 +6,80 @@ import (
 	"io"
 	"log/slog"
 	"runtime"
+	"time"
 )
 
-var _ slog.Handler = (*slogHandler)(nil)
+var _ slog.Handler = (*slogJSONHandler)(nil)
 
-type slogHandler struct {
-	slogHandlerOptions *slog.HandlerOptions
-
+type slogJSONHandler struct {
+	slogHandlerOptions    *slog.HandlerOptions
+	w                     io.Writer
+	addCallerSkip         int
+	addTimestamp          bool
+	addAttrs              []slog.Attr
 	errorVerbose          bool
 	errorVerboseKeySuffix string
 	slogHandler           slog.Handler
 }
 
 func NewHandler(w io.Writer, level slog.Leveler, opts ...HandlerOption) slog.Handler {
-	slogHandlerOption := &slog.HandlerOptions{
-		AddSource:   true,
-		Level:       level,
-		ReplaceAttr: ReplaceAttr,
-	}
-	s := &slogHandler{
-		slogHandlerOptions:    slogHandlerOption,
+	return newHandler(w, level, opts...)
+}
+
+func newHandler(w io.Writer, level slog.Leveler, opts ...HandlerOption) *slogJSONHandler {
+	const defaultCallerSkip = 4
+	s := &slogJSONHandler{
+		slogHandlerOptions: &slog.HandlerOptions{
+			AddSource:   true,
+			Level:       level,
+			ReplaceAttr: ReplaceAttr,
+		},
+		w:                     w,
+		addCallerSkip:         defaultCallerSkip,
+		addTimestamp:          true,
+		addAttrs:              nil,
 		errorVerbose:          true,
 		errorVerboseKeySuffix: "Verbose",
-		slogHandler:           slog.NewJSONHandler(w, slogHandlerOption),
+		slogHandler:           nil,
 	}
 
 	for _, o := range opts {
 		o.apply(s)
 	}
 
+	s.slogHandler = slog.NewJSONHandler(s.w, s.slogHandlerOptions)
+
 	return s
 }
 
-func (s *slogHandler) Enabled(ctx context.Context, level slog.Level) bool {
+func RenewHandler(ctx context.Context, handler slog.Handler, opts ...HandlerOption) slog.Handler {
+	source, ok := handler.(*slogJSONHandler)
+	if !ok {
+		const defaultCallerSkip = 1
+		var pcs [1]uintptr
+		runtime.Callers(defaultCallerSkip, pcs[:])
+		err := fmt.Errorf("RenewHandler: handler=%T: %w", handler, ErrHandlerIsNotSlogJSONHandler)
+		r := slog.NewRecord(time.Now(), slog.LevelWarn, err.Error(), pcs[0])
+		r.AddAttrs(Error(err))
+		_ = handler.Handle(ctx, r)
+		source = newHandler(DefaultWriter, DefaultLevel)
+	}
+
+	s := source.clone()
+	for _, o := range opts {
+		o.apply(s)
+	}
+
+	s.slogHandler = slog.NewJSONHandler(s.w, s.slogHandlerOptions)
+
+	return s
+}
+
+func (s *slogJSONHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return s.slogHandler.Enabled(ctx, level)
 }
 
-func (s *slogHandler) Handle(ctx context.Context, r slog.Record) error {
+func (s *slogJSONHandler) Handle(ctx context.Context, r slog.Record) error {
 	var attrs []slog.Attr
 	r.Attrs(func(a slog.Attr) bool {
 		// Attr Value type switch
@@ -58,15 +95,22 @@ func (s *slogHandler) Handle(ctx context.Context, r slog.Record) error {
 		return true
 	})
 
-	// If AddCallerSkip is set, add caller skip to the record.
-	if skip := addCallerSkip(ctx); skip > 0 {
-		const defaultCallerSkip = 4
+	// If addCallerSkip is set, add caller skip to the record.
+	if skip := s.addCallerSkip + contextAddCallerSkip(ctx); skip > 0 {
 		var pcs [1]uintptr
-		runtime.Callers(defaultCallerSkip+skip, pcs[:])
+		runtime.Callers(skip, pcs[:])
 		r.PC = pcs[0]
 	}
 
+	// If addTimestamp is false, remove timestamp from the record.
+	if !s.addTimestamp {
+		r.Time = time.Time{}
+	}
+
 	// Add attrs to the record.
+	if len(s.addAttrs) > 0 {
+		r.AddAttrs(s.addAttrs...)
+	}
 	if len(attrs) > 0 {
 		r.AddAttrs(attrs...)
 	}
@@ -75,19 +119,19 @@ func (s *slogHandler) Handle(ctx context.Context, r slog.Record) error {
 	return s.slogHandler.Handle(ctx, r)
 }
 
-func (s *slogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (s *slogJSONHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	h := s.clone()
 	h.slogHandler = h.slogHandler.WithAttrs(attrs)
 	return h
 }
 
-func (s *slogHandler) WithGroup(name string) slog.Handler {
+func (s *slogJSONHandler) WithGroup(name string) slog.Handler {
 	h := s.clone()
 	h.slogHandler = h.slogHandler.WithGroup(name)
 	return h
 }
 
-func (s *slogHandler) clone() *slogHandler {
+func (s *slogJSONHandler) clone() *slogJSONHandler {
 	// Clone slogHandler
 	c := *s
 	// Clone slogHandlerOptions

@@ -3,29 +3,37 @@ package slogz
 import "log/slog"
 
 type HandlerOption interface {
-	apply(s *slogHandler)
+	apply(s *slogJSONHandler)
 }
 
-type withHandlerOptions struct{ o *slog.HandlerOptions }
+type handlerOptionFunc func(s *slogJSONHandler)
 
-func (o withHandlerOptions) apply(s *slogHandler) { s.slogHandlerOptions = o.o }
+func (f handlerOptionFunc) apply(s *slogJSONHandler) { f(s) }
 
-func WithHandlerOptions(o *slog.HandlerOptions) HandlerOption {
-	return withHandlerOptions{o: o}
+func WithHandlerOptionHandlerOptions(o *slog.HandlerOptions) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.slogHandlerOptions = o })
 }
 
-type withErrorVerbose struct{ errorVerbose bool }
-
-func (o withErrorVerbose) apply(s *slogHandler) { s.errorVerbose = o.errorVerbose }
-
-func WithErrorVerbose(verbose bool) HandlerOption {
-	return withErrorVerbose{errorVerbose: verbose}
+func WithHandlerOptionAddSource(addSource bool) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.slogHandlerOptions.AddSource = addSource })
 }
 
-type withErrorVerboseKeySuffix struct{ suffix string }
+func WithHandlerOptionAddCallerSkip(skip int) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.addCallerSkip += skip })
+}
 
-func (o withErrorVerboseKeySuffix) apply(s *slogHandler) { s.errorVerboseKeySuffix = o.suffix }
+func WithHandlerOptionAddTimestamp(addTimestamp bool) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.addTimestamp = addTimestamp })
+}
 
-func WithErrorVerboseKeySuffix(suffix string) HandlerOption {
-	return withErrorVerboseKeySuffix{suffix: suffix}
+func WithHandlerOptionAddAttrs(attrs ...slog.Attr) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.addAttrs = attrs })
+}
+
+func WithHandlerOptionErrorVerbose(verbose bool) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.errorVerbose = verbose })
+}
+
+func WithHandlerOptionErrorVerboseKeySuffix(suffix string) HandlerOption {
+	return handlerOptionFunc(func(s *slogJSONHandler) { s.errorVerboseKeySuffix = suffix })
 }

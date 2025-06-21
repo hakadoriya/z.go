@@ -20,7 +20,7 @@ func TestFromContext(t *testing.T) {
 		requirez.StringHasPrefix(t, logBuffer.String(), `{"time":"`)
 		requirez.StringContains(t, logBuffer.String(), `","severity":"INFO","caller":"`)
 		requirez.StringContains(t, logBuffer.String(), `_test.go:`)
-		requirez.StringHasSuffix(t, logBuffer.String(), `","msg":"test","test":true}`+"\n")
+		requirez.StringHasSuffix(t, logBuffer.String(), `","message":"test","test":true}`+"\n")
 	})
 }
 
@@ -35,7 +35,7 @@ func TestFromContext_failure(t *testing.T) {
 		requirez.StringHasPrefix(t, logBuffer.String(), `{"time":"`)
 		requirez.StringContains(t, logBuffer.String(), `","severity":"WARN","caller":"`)
 		requirez.StringContains(t, logBuffer.String(), `_test.go:`)
-		requirez.StringHasSuffix(t, logBuffer.String(), `","msg":"context is nil","test":true}`+"\n")
+		requirez.StringHasSuffix(t, logBuffer.String(), `","message":"context is nil","test":true}`+"\n")
 	})
 
 	t.Run("error,not_found_in_context", func(t *testing.T) {
@@ -47,6 +47,6 @@ func TestFromContext_failure(t *testing.T) {
 		requirez.StringHasPrefix(t, logBuffer.String(), `{"time":"`)
 		requirez.StringContains(t, logBuffer.String(), `","severity":"WARN","caller":"`)
 		requirez.StringContains(t, logBuffer.String(), `_test.go:`)
-		requirez.StringHasSuffix(t, logBuffer.String(), `","msg":"*slog.Logger not found in context","test":true}`+"\n")
+		requirez.StringHasSuffix(t, logBuffer.String(), `","message":"*slog.Logger not found in context","test":true}`+"\n")
 	})
 }

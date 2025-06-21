@@ -4,13 +4,13 @@ import "context"
 
 type ctxKeyAddCallerSkip struct{}
 
-func AddCallerSkip(ctx context.Context, skip int) context.Context {
-	currentSkip := addCallerSkip(ctx)
+func ContextWithAddCallerSkip(ctx context.Context, skip int) context.Context {
+	currentSkip := contextAddCallerSkip(ctx)
 
 	return context.WithValue(ctx, ctxKeyAddCallerSkip{}, currentSkip+skip)
 }
 
-func addCallerSkip(ctx context.Context) int {
+func contextAddCallerSkip(ctx context.Context) int {
 	if ctx == nil {
 		return 0
 	}

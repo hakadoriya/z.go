@@ -20,6 +20,6 @@ func Test_slogHandler_WithGroup(t *testing.T) {
 		requirez.StringHasPrefix(t, logBuffer.String(), `{"time":"`)
 		requirez.StringContains(t, logBuffer.String(), `","severity":"INFO","caller":"`)
 		requirez.StringContains(t, logBuffer.String(), `_test.go:`)
-		requirez.StringHasSuffix(t, logBuffer.String(), `","msg":"test","test":true,"testGroup":{"error":"EOF","errorVerbose":"EOF"}}`+"\n")
+		requirez.StringHasSuffix(t, logBuffer.String(), `","message":"test","test":true,"testGroup":{"error":"EOF","errorVerbose":"EOF"}}`+"\n")
 	})
 }

@@ -15,15 +15,23 @@ func ReplaceAttr(_ []string, a slog.Attr) slog.Attr {
 			return a
 		}
 
-		a.Key = "severity"
+		a.Key = DefaultLevelKey
 		return a
 	case "source":
 		switch v := a.Value.Any().(type) {
 		case *slog.Source:
-			return slog.String("caller", filepathz.ExtractShortPath(fmt.Sprintf("%s:%d", v.File, v.Line)))
+			return slog.String(DefaultSourceKey, filepathz.ExtractShortPath(fmt.Sprintf("%s:%d", v.File, v.Line)))
 		default:
 			return a
 		}
+	case "msg":
+		_, ok := a.Value.Any().(string)
+		if !ok {
+			return a
+		}
+
+		a.Key = DefaultMessageKey
+		return a
 	default:
 		// no-op
 	}

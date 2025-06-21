@@ -28,4 +28,11 @@ func TestReplaceAttr(t *testing.T) {
 		actual := ReplaceAttr(nil, slog.String("source", "SOURCE"))
 		requirez.Equal(t, `source=SOURCE`, actual.String())
 	})
+
+	t.Run("success,not_msg", func(t *testing.T) {
+		t.Parallel()
+
+		actual := ReplaceAttr(nil, slog.Int("msg", 100))
+		requirez.Equal(t, `msg=100`, actual.String())
+	})
 }
