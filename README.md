@@ -29,6 +29,7 @@ go get -u github.com/hakadoriya/z.go
 | [`buildinfoz`](./buildinfoz) | buildinfoz package provides functionality to access and manage build information of Go binaries, including version, commit hash, build time and other compilation-time metadata. |
 | [`buildz`](./buildz) | buildz package provides utilities for Go build process management, including package import path resolution and build configuration handling. |
 | [`bytez`](./bytez) | bytez package provides a comprehensive set of utilities for byte slice manipulation in Go, offering functions for conversion, comparison, transformation and efficient byte operations. |
+| [`cachez`](./cachez) | Package cachez provides a lightweight in-memory key-value cache with LRU/LFU eviction policies and TTL support. |
 | [`cliz`](./cliz) | cliz package provides a framework for building command-line interfaces in Go, featuring command hierarchy, option parsing, bash/zsh completion support, and standardized CLI structure management. |
 | [`contextz`](./contextz) | contextz package provides utilities for working with context.Context, including context creation, manipulation, and management of context values and cancellation. |
 | [`databasez/sqlz`](./databasez/sqlz) | sqlz package provides enhanced utilities for Go's database/sql package, offering simplified database operations, connection management, and query execution helpers. |
