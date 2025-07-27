@@ -50,7 +50,7 @@ func (c *Command) checkHelp() error {
 	// If help option is set, show help message and return ErrHelp.
 	helpRequested, err := c.getOptionHelp(HelpOptionName)
 	if err == nil && helpRequested {
-		Logger.Debug("checkHelp: " + strings.Join(c.allExecutedCommandNames, " "))
+		Logger.DebugContext(c.ctx, "checkHelp: "+strings.Join(c.allExecutedCommandNames, " "))
 		c.usage()
 		return ErrHelp
 	}
@@ -76,7 +76,7 @@ func (c *Command) usage() {
 
 //nolint:cyclop,funlen,gocognit
 func (c *Command) DefaultUsage() {
-	Logger.Debug("DefaultUsage: " + c.Name)
+	Logger.DebugContext(c.ctx, "DefaultUsage: "+c.Name)
 
 	const indent = "    "
 

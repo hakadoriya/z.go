@@ -110,7 +110,7 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 		}
 
 		tagValue := field.Tag.Get(c.tagKey)
-		Logger.Debug(fmt.Sprintf("tagKey=%s, tagValue=%s", c.tagKey, tagValue))
+		Logger.Debug(fmt.Sprintf("tagKey=%s, tagValue=%s", c.tagKey, tagValue)) //nolint:noctx
 		if tagValue == "" {
 			continue
 		}
@@ -119,7 +119,7 @@ func unmarshal(iface pkgInterface, v interface{}, opts ...UnmarshalOption) error
 		if err != nil {
 			return fmt.Errorf("field=%s: tag=%s: %w", field.Name, c.tagKey, err)
 		}
-		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", c.tagKey, envKey, opts))
+		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", c.tagKey, envKey, opts)) //nolint:noctx
 
 		required := c.optsContainRequiredKey(opts)
 
@@ -225,7 +225,7 @@ func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []
 	var inQuotedDefault bool
 	var defaultString string
 	for _, s := range strings.Split(optsString, ",") {
-		Logger.Debug("key=" + s)
+		Logger.Debug("key=" + s) //nolint:noctx
 		switch {
 		case strings.HasPrefix(s, c.defaultKey+`="`) || inQuotedDefault: // default="value"
 			inQuotedDefault = true
@@ -235,7 +235,7 @@ func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []
 				defaultString = ""
 				inQuotedDefault = false
 			}
-			Logger.Debug("defaultString=" + defaultString)
+			Logger.Debug("defaultString=" + defaultString) //nolint:noctx
 			continue
 		case strings.HasPrefix(s, c.defaultKey+"="): // default=value
 			opts = append(opts, strings.TrimFunc(s, unicode.IsSpace))
@@ -249,7 +249,7 @@ func (c *unmarshalConfig) parseTagValue(tagValue string) (envKey string, opts []
 		}
 	}
 
-	Logger.Debug("envKey=" + envKey + ", opts=[" + strings.Join(opts, ",") + "]")
+	Logger.Debug("envKey=" + envKey + ", opts=[" + strings.Join(opts, ",") + "]") //nolint:noctx
 
 	return envKey, opts, nil
 }
@@ -260,15 +260,15 @@ func (c *unmarshalConfig) optsContainRequiredKey(opts []string) bool {
 
 func (c *unmarshalConfig) optsContainDefaultKey(opts []string) (defaultValue string, hasDefault bool) {
 	for _, opt := range opts {
-		Logger.Debug("opt=" + opt)
+		Logger.Debug("opt=" + opt) //nolint:noctx
 		if strings.HasPrefix(opt, c.defaultKey+`="`) {
 			v, has := strings.CutPrefix(opt, c.defaultKey+`=`)
-			Logger.Debug("v=" + v)
+			Logger.Debug("v=" + v) //nolint:noctx
 			unquoted, err := strconv.Unquote(v)
 			if err != nil {
 				return v, has
 			}
-			Logger.Debug("unquoted=" + unquoted)
+			Logger.Debug("unquoted=" + unquoted) //nolint:noctx
 			return unquoted, has
 		}
 		if strings.HasPrefix(opt, c.defaultKey+"=") {
