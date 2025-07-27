@@ -15,9 +15,11 @@ linters:
     - ireturn # NOTE: too many false positives and negatives occur frequently, causing the --fix option to malfunction. So it is disabled.
     - lll # unnecessary
     - nlreturn # ignore "return with no blank line before"
+    - noinlineerr # unnecessary
     - nonamedreturns # unnecessary
     - varnamelen # unnecessary
     - wsl # ignore "declarations should never be cuddled"
+    - wsl_v5 # unnecessary
   settings:
     wrapcheck:
       ignore-sigs:

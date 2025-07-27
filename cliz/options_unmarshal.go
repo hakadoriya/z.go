@@ -62,13 +62,13 @@ func UnmarshalOptions(c *Command, v interface{}, opts ...UnmarshalOptionsOption)
 		}
 
 		tagValue := stringz.TrimLeftSpace(field.Tag.Get(cfg.tagKey))
-		Logger.Debug(fmt.Sprintf("tagKey=%s, tagValue=%s", cfg.tagKey, tagValue))
+		Logger.Debug(fmt.Sprintf("tagKey=%s, tagValue=%s", cfg.tagKey, tagValue)) //nolint:noctx
 		if tagValue == "" {
 			continue
 		}
 
 		optName, opts := parseTagValue(tagValue)
-		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", cfg.tagKey, optName, opts))
+		Logger.Debug(fmt.Sprintf("tagKey=%s, envKey=%s, opts=%v", cfg.tagKey, optName, opts)) //nolint:noctx
 		if optName == "" {
 			return fmt.Errorf("field=%s: tag=%s: tagValue=%s: %w", field.Name, cfg.tagKey, tagValue, ErrInvalidTagValue)
 		}
