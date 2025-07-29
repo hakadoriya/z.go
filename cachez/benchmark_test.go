@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkCache_LRU_Set(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity:    10000,
 		EvictionPolicy: cachez.LRU,
 	})
@@ -23,7 +23,7 @@ func BenchmarkCache_LRU_Set(b *testing.B) {
 }
 
 func BenchmarkCache_LRU_Get(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity:    10000,
 		EvictionPolicy: cachez.LRU,
 	})
@@ -43,7 +43,7 @@ func BenchmarkCache_LRU_Get(b *testing.B) {
 }
 
 func BenchmarkCache_LFU_Set(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity:    10000,
 		EvictionPolicy: cachez.LFU,
 	})
@@ -57,7 +57,7 @@ func BenchmarkCache_LFU_Set(b *testing.B) {
 }
 
 func BenchmarkCache_LFU_Get(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity:    10000,
 		EvictionPolicy: cachez.LFU,
 	})
@@ -77,7 +77,7 @@ func BenchmarkCache_LFU_Get(b *testing.B) {
 }
 
 func BenchmarkCache_SetWithTTL(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity: 10000,
 	})
 
@@ -90,7 +90,7 @@ func BenchmarkCache_SetWithTTL(b *testing.B) {
 }
 
 func BenchmarkCache_ConcurrentAccess(b *testing.B) {
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, int](&cachez.Options{
 		MaxCapacity: 10000,
 	})
 

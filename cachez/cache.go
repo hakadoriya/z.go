@@ -20,26 +20,26 @@ const (
 	LFU
 )
 
-// Cache is the cache interface.
+// Cache is the generic cache interface.
 //
-// ja: Cache はキャッシュインターフェースです
-type Cache interface {
+// ja: Cache はジェネリックキャッシュインターフェースです
+type Cache[K comparable, V any] interface {
 	// Get retrieves the value for the specified key.
 	//
 	// ja: Get は指定されたキーの値を取得します
-	Get(key string) (interface{}, bool)
+	Get(key K) (V, bool)
 	// Set stores the specified key and value in the cache.
 	//
 	// ja: Set は指定されたキーと値をキャッシュに保存します
-	Set(key string, value interface{})
+	Set(key K, value V)
 	// SetWithTTL stores the specified key and value with TTL in the cache.
 	//
 	// ja: SetWithTTL は指定されたキーと値を TTL 付きでキャッシュに保存します
-	SetWithTTL(key string, value interface{}, ttl time.Duration)
+	SetWithTTL(key K, value V, ttl time.Duration)
 	// Delete removes the specified key from the cache.
 	//
 	// ja: Delete は指定されたキーをキャッシュから削除します
-	Delete(key string)
+	Delete(key K)
 	// Clear removes all entries from the cache.
 	//
 	// ja: Clear はキャッシュの全エントリを削除します
@@ -49,6 +49,7 @@ type Cache interface {
 	// ja: Size は現在のキャッシュエントリ数を返します
 	Size() int
 }
+
 
 // Options represents cache configuration options.
 //
@@ -82,24 +83,24 @@ func DefaultOptions() *Options {
 	}
 }
 
-// New creates a new cache instance.
+// New creates a new generic cache instance.
 //
-// ja: New は新しいキャッシュインスタンスを作成します
-func New(opts *Options) Cache {
+// ja: New は新しいジェネリックキャッシュインスタンスを作成します
+func New[K comparable, V any](opts *Options) Cache[K, V] {
 	if opts == nil {
 		opts = DefaultOptions()
 	}
 
 	if opts.MaxCapacity <= 0 {
-		opts.MaxCapacity = 1000
+		opts.MaxCapacity = 1000 //nolint:mnd
 	}
 
 	switch opts.EvictionPolicy {
 	case LFU:
-		return newLFUCache(opts)
+		return newLFUCacheG[K, V](opts)
 	case LRU:
 		fallthrough
 	default:
-		return newLRUCache(opts)
+		return newLRUCacheG[K, V](opts)
 	}
 }

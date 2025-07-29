@@ -10,7 +10,7 @@ import (
 func TestCache_LRU_Basic(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    3,
 		EvictionPolicy: cachez.LRU,
 	})
@@ -40,7 +40,7 @@ func TestCache_LRU_Basic(t *testing.T) {
 func TestCache_LFU_Basic(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    3,
 		EvictionPolicy: cachez.LFU,
 	})
@@ -70,7 +70,7 @@ func TestCache_LFU_Basic(t *testing.T) {
 func TestCache_TTL(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(nil) // デフォルトオプション
+	cache := cachez.New[string, string](nil) // デフォルトオプション
 
 	// TTL 付きで値を設定
 	cache.SetWithTTL("key1", "value1", 100*time.Millisecond)
@@ -92,7 +92,7 @@ func TestCache_TTL(t *testing.T) {
 func TestCache_Delete(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(nil)
+	cache := cachez.New[string, string](nil)
 
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
@@ -111,7 +111,7 @@ func TestCache_Delete(t *testing.T) {
 func TestCache_Clear(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(nil)
+	cache := cachez.New[string, string](nil)
 
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
@@ -135,7 +135,7 @@ func TestCache_Clear(t *testing.T) {
 func TestCache_DefaultTTL(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		DefaultTTL: 100 * time.Millisecond,
 	})
 
@@ -159,7 +159,7 @@ func TestCache_DefaultTTL(t *testing.T) {
 func TestCache_UpdateExisting(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(nil)
+	cache := cachez.New[string, string](nil)
 
 	cache.Set("key1", "value1")
 	cache.Set("key1", "value2") // 既存のキーを更新

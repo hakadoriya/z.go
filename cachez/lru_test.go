@@ -10,7 +10,7 @@ import (
 func TestLRU_EvictionOrder(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    5,
 		EvictionPolicy: cachez.LRU,
 	})
@@ -44,7 +44,7 @@ func TestLRU_EvictionOrder(t *testing.T) {
 func TestLRU_UpdateMovesToFront(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    3,
 		EvictionPolicy: cachez.LRU,
 	})

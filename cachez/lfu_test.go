@@ -10,7 +10,7 @@ import (
 func TestLFU_EvictionOrder(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    5,
 		EvictionPolicy: cachez.LFU,
 	})
@@ -64,7 +64,7 @@ func TestLFU_EvictionOrder(t *testing.T) {
 func TestLFU_UpdateIncreasesFrequency(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New(&cachez.Options{
+	cache := cachez.New[string, string](&cachez.Options{
 		MaxCapacity:    3,
 		EvictionPolicy: cachez.LFU,
 	})
