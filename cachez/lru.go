@@ -20,11 +20,11 @@ type lruCache struct {
 // newLRUCache creates a new LRU cache instance.
 //
 // ja: newLRUCache は新しい LRU キャッシュインスタンスを作成します
-func newLRUCache(opts *Options) *lruCache {
+func newLRUCache(cfg *config) *lruCache {
 	return &lruCache{
 		mu:          sync.RWMutex{},
-		maxCapacity: opts.MaxCapacity,
-		defaultTTL:  opts.DefaultTTL,
+		maxCapacity: cfg.maxCapacity,
+		defaultTTL:  cfg.defaultTTL,
 		items:       make(map[string]*list.Element),
 		evictList:   list.New(),
 	}

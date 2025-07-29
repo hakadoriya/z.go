@@ -10,10 +10,10 @@ import (
 func TestCache_LRU_Basic(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](&cachez.Options{
-		MaxCapacity:    3,
-		EvictionPolicy: cachez.LRU,
-	})
+	cache := cachez.New[string, string](
+		cachez.WithMaxCapacity(3),
+		cachez.WithEvictionPolicy(cachez.LRU),
+	)
 
 	// 基本的な Set/Get のテスト
 	cache.Set("key1", "value1")
@@ -22,7 +22,7 @@ func TestCache_LRU_Basic(t *testing.T) {
 
 	val, ok := cache.Get("key1")
 	if !ok || val != "value1" {
-		t.Errorf("expected value1, got %v", val)
+		t.Errorf("❌: expected value1, got %v", val)
 	}
 
 	// 容量超過時のエビクションテスト
@@ -40,10 +40,10 @@ func TestCache_LRU_Basic(t *testing.T) {
 func TestCache_LFU_Basic(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](&cachez.Options{
-		MaxCapacity:    3,
-		EvictionPolicy: cachez.LFU,
-	})
+	cache := cachez.New[string, string](
+		cachez.WithMaxCapacity(3),
+		cachez.WithEvictionPolicy(cachez.LFU),
+	)
 
 	// 基本的な Set/Get のテスト
 	cache.Set("key1", "value1")
@@ -70,14 +70,14 @@ func TestCache_LFU_Basic(t *testing.T) {
 func TestCache_TTL(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](nil) // デフォルトオプション
+	cache := cachez.New[string, string]() // デフォルトオプション
 
 	// TTL 付きで値を設定
 	cache.SetWithTTL("key1", "value1", 100*time.Millisecond)
 
 	// 即座に取得
 	if val, ok := cache.Get("key1"); !ok || val != "value1" {
-		t.Errorf("expected value1, got %v", val)
+		t.Errorf("❌: expected value1, got %v", val)
 	}
 
 	// TTL が経過するまで待機
@@ -92,7 +92,7 @@ func TestCache_TTL(t *testing.T) {
 func TestCache_Delete(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](nil)
+	cache := cachez.New[string, string]()
 
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
@@ -104,27 +104,27 @@ func TestCache_Delete(t *testing.T) {
 	}
 
 	if val, ok := cache.Get("key2"); !ok || val != "value2" {
-		t.Errorf("key2 should still exist with value2, got %v", val)
+		t.Errorf("❌: key2 should still exist with value2, got %v", val)
 	}
 }
 
 func TestCache_Clear(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](nil)
+	cache := cachez.New[string, string]()
 
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
 	cache.Set("key3", "value3")
 
 	if size := cache.Size(); size != 3 {
-		t.Errorf("expected size 3, got %d", size)
+		t.Errorf("❌: expected size 3, got %d", size)
 	}
 
 	cache.Clear()
 
 	if size := cache.Size(); size != 0 {
-		t.Errorf("expected size 0 after clear, got %d", size)
+		t.Errorf("❌: expected size 0 after clear, got %d", size)
 	}
 
 	if _, ok := cache.Get("key1"); ok {
@@ -135,16 +135,16 @@ func TestCache_Clear(t *testing.T) {
 func TestCache_DefaultTTL(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](&cachez.Options{
-		DefaultTTL: 100 * time.Millisecond,
-	})
+	cache := cachez.New[string, string](
+		cachez.WithDefaultTTL(100 * time.Millisecond),
+	)
 
 	// デフォルト TTL で値を設定
 	cache.Set("key1", "value1")
 
 	// 即座に取得
 	if val, ok := cache.Get("key1"); !ok || val != "value1" {
-		t.Errorf("expected value1, got %v", val)
+		t.Errorf("❌: expected value1, got %v", val)
 	}
 
 	// デフォルト TTL が経過するまで待機
@@ -159,17 +159,17 @@ func TestCache_DefaultTTL(t *testing.T) {
 func TestCache_UpdateExisting(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](nil)
+	cache := cachez.New[string, string]()
 
 	cache.Set("key1", "value1")
 	cache.Set("key1", "value2") // 既存のキーを更新
 
 	if val, ok := cache.Get("key1"); !ok || val != "value2" {
-		t.Errorf("expected updated value2, got %v", val)
+		t.Errorf("❌: expected updated value2, got %v", val)
 	}
 
 	// サイズは変わらないはず
 	if size := cache.Size(); size != 1 {
-		t.Errorf("expected size 1, got %d", size)
+		t.Errorf("❌: expected size 1, got %d", size)
 	}
 }

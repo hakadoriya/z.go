@@ -9,10 +9,10 @@ import (
 )
 
 func BenchmarkCache_LRU_Set(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity:    10000,
-		EvictionPolicy: cachez.LRU,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+		cachez.WithEvictionPolicy(cachez.LRU),
+	)
 
 	b.ResetTimer()
 
@@ -23,10 +23,10 @@ func BenchmarkCache_LRU_Set(b *testing.B) {
 }
 
 func BenchmarkCache_LRU_Get(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity:    10000,
-		EvictionPolicy: cachez.LRU,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+		cachez.WithEvictionPolicy(cachez.LRU),
+	)
 
 	// 事前にデータを投入
 	for i := range 10000 {
@@ -43,10 +43,10 @@ func BenchmarkCache_LRU_Get(b *testing.B) {
 }
 
 func BenchmarkCache_LFU_Set(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity:    10000,
-		EvictionPolicy: cachez.LFU,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+		cachez.WithEvictionPolicy(cachez.LFU),
+	)
 
 	b.ResetTimer()
 
@@ -57,10 +57,10 @@ func BenchmarkCache_LFU_Set(b *testing.B) {
 }
 
 func BenchmarkCache_LFU_Get(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity:    10000,
-		EvictionPolicy: cachez.LFU,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+		cachez.WithEvictionPolicy(cachez.LFU),
+	)
 
 	// 事前にデータを投入
 	for i := range 10000 {
@@ -77,9 +77,9 @@ func BenchmarkCache_LFU_Get(b *testing.B) {
 }
 
 func BenchmarkCache_SetWithTTL(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	b.ResetTimer()
 
@@ -90,9 +90,9 @@ func BenchmarkCache_SetWithTTL(b *testing.B) {
 }
 
 func BenchmarkCache_ConcurrentAccess(b *testing.B) {
-	cache := cachez.New[string, int](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	// 事前にデータを投入
 	for i := range 10000 {

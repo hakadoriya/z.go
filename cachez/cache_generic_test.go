@@ -16,9 +16,9 @@ type TestCase struct {
 func TestCache_Generic_IntKey(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[int, string](&cachez.Options{
-		MaxCapacity: 3,
-	})
+	cache := cachez.New[int, string](
+		cachez.WithMaxCapacity(3),
+	)
 
 	// Test with integer keys
 	cache.Set(1, "one")
@@ -27,7 +27,7 @@ func TestCache_Generic_IntKey(t *testing.T) {
 
 	val, ok := cache.Get(1)
 	if !ok || val != "one" {
-		t.Errorf("expected 'one', got %v", val)
+		t.Errorf("❌: expected 'one', got %v", val)
 	}
 
 	// Test eviction
@@ -46,9 +46,9 @@ func TestCache_Generic_StructKey(t *testing.T) {
 		ResourceID string
 	}
 
-	cache := cachez.New[CacheKey, TestCase](&cachez.Options{
-		MaxCapacity: 10,
-	})
+	cache := cachez.New[CacheKey, TestCase](
+		cachez.WithMaxCapacity(10),
+	)
 
 	key1 := CacheKey{UserID: 1, ResourceID: "res1"}
 	val1 := TestCase{ID: 100, Name: "Test 1"}
@@ -65,7 +65,7 @@ func TestCache_Generic_StructKey(t *testing.T) {
 		t.Error("key1 should exist")
 	}
 	if result.ID != 100 || result.Name != "Test 1" {
-		t.Errorf("unexpected value: %+v", result)
+		t.Errorf("❌: unexpected value: %+v", result)
 	}
 
 	// Test deletion
@@ -78,16 +78,16 @@ func TestCache_Generic_StructKey(t *testing.T) {
 func TestCache_Generic_WithTTL(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, int](&cachez.Options{
-		DefaultTTL: 50 * time.Millisecond,
-	})
+	cache := cachez.New[string, int](
+		cachez.WithDefaultTTL(50 * time.Millisecond),
+	)
 
 	cache.Set("count", 42)
 
 	// Immediate retrieval
 	val, ok := cache.Get("count")
 	if !ok || val != 42 {
-		t.Errorf("expected 42, got %v", val)
+		t.Errorf("❌: expected 42, got %v", val)
 	}
 
 	// Wait for expiration
@@ -102,7 +102,7 @@ func TestCache_Generic_TypeSafety(t *testing.T) {
 	t.Parallel()
 
 	// This test demonstrates compile-time type safety
-	intCache := cachez.New[string, int](nil)
+	intCache := cachez.New[string, int]()
 	intCache.Set("number", 123)
 
 	// This would cause a compile error if uncommented:
@@ -110,13 +110,13 @@ func TestCache_Generic_TypeSafety(t *testing.T) {
 
 	val, ok := intCache.Get("number")
 	if !ok || val != 123 {
-		t.Errorf("expected 123, got %v", val)
+		t.Errorf("❌: expected 123, got %v", val)
 	}
 
 	// The returned value is already the correct type (int)
 	// No type assertion needed
 	doubled := val * 2
 	if doubled != 246 {
-		t.Errorf("expected 246, got %d", doubled)
+		t.Errorf("❌: expected 246, got %d", doubled)
 	}
 }

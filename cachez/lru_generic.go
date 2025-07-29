@@ -20,11 +20,11 @@ type lruCacheG[K comparable, V any] struct {
 // newLRUCacheG creates a new generic LRU cache instance.
 //
 // ja: newLRUCacheG は新しいジェネリック版 LRU キャッシュインスタンスを作成します
-func newLRUCacheG[K comparable, V any](opts *Options) *lruCacheG[K, V] {
+func newLRUCacheG[K comparable, V any](cfg *config) *lruCacheG[K, V] {
 	return &lruCacheG[K, V]{
 		mu:          sync.RWMutex{},
-		maxCapacity: opts.MaxCapacity,
-		defaultTTL:  opts.DefaultTTL,
+		maxCapacity: cfg.maxCapacity,
+		defaultTTL:  cfg.defaultTTL,
 		items:       make(map[K]*list.Element),
 		evictList:   list.New(),
 	}

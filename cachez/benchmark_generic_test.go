@@ -7,9 +7,9 @@ import (
 )
 
 func BenchmarkCache_IntKey_Set(b *testing.B) {
-	cache := cachez.New[int, string](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[int, string](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	b.ResetTimer()
 
@@ -19,9 +19,9 @@ func BenchmarkCache_IntKey_Set(b *testing.B) {
 }
 
 func BenchmarkCache_IntKey_Get(b *testing.B) {
-	cache := cachez.New[int, string](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[int, string](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	// Pre-populate cache
 	for i := range 10000 {
@@ -41,9 +41,9 @@ type benchKey struct {
 }
 
 func BenchmarkCache_StructKey_Set(b *testing.B) {
-	cache := cachez.New[benchKey, string](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[benchKey, string](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	keys := make([]benchKey, 10000)
 	for i := range keys {
@@ -59,9 +59,9 @@ func BenchmarkCache_StructKey_Set(b *testing.B) {
 }
 
 func BenchmarkCache_StructKey_Get(b *testing.B) {
-	cache := cachez.New[benchKey, string](&cachez.Options{
-		MaxCapacity: 10000,
-	})
+	cache := cachez.New[benchKey, string](
+		cachez.WithMaxCapacity(10000),
+	)
 
 	keys := make([]benchKey, 10000)
 	for i := range keys {

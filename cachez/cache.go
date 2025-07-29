@@ -50,57 +50,80 @@ type Cache[K comparable, V any] interface {
 	Size() int
 }
 
-
-// Options represents cache configuration options.
+// config represents internal cache configuration.
 //
-// ja: Options はキャッシュの設定オプションです
-type Options struct {
-	// MaxCapacity is the maximum capacity of the cache.
-	//
-	// ja: MaxCapacity はキャッシュの最大容量です
-	MaxCapacity int
-	// EvictionPolicy is the eviction policy.
-	//
-	// ja: EvictionPolicy はエビクションポリシーです
-	EvictionPolicy EvictionPolicy
-	// DefaultTTL is the default TTL.
-	//
-	// ja: DefaultTTL はデフォルトの TTL です
-	DefaultTTL time.Duration
+// ja: config は内部キャッシュ設定を表します
+type config struct {
+	maxCapacity    int
+	evictionPolicy EvictionPolicy
+	defaultTTL     time.Duration
 }
 
-// DefaultOptions returns default options.
+// Option is a functional option for configuring the cache.
 //
-// ja: DefaultOptions はデフォルトのオプションを返します
-func DefaultOptions() *Options {
-	return &Options{
-		MaxCapacity:    1000, //nolint:mnd
-		EvictionPolicy: LRU,
-		// No TTL by default
-		//
-		// ja: デフォルトの TTL は 0
-		DefaultTTL: 0,
-	}
+// ja: Option はキャッシュを設定するための関数オプションです
+type Option interface {
+	apply(*config)
 }
 
-// New creates a new generic cache instance.
+type optionFunc func(*config)
+
+func (f optionFunc) apply(c *config) {
+	f(c)
+}
+
+// WithMaxCapacity sets the maximum capacity of the cache.
 //
-// ja: New は新しいジェネリックキャッシュインスタンスを作成します
-func New[K comparable, V any](opts *Options) Cache[K, V] {
-	if opts == nil {
-		opts = DefaultOptions()
+// ja: WithMaxCapacity はキャッシュの最大容量を設定します
+func WithMaxCapacity(capacity int) Option {
+	return optionFunc(func(c *config) {
+		if capacity > 0 {
+			c.maxCapacity = capacity
+		}
+	})
+}
+
+// WithEvictionPolicy sets the eviction policy.
+//
+// ja: WithEvictionPolicy はエビクションポリシーを設定します
+func WithEvictionPolicy(policy EvictionPolicy) Option {
+	return optionFunc(func(c *config) {
+		c.evictionPolicy = policy
+	})
+}
+
+// WithDefaultTTL sets the default TTL for cache entries.
+//
+// ja: WithDefaultTTL はキャッシュエントリのデフォルト TTL を設定します
+func WithDefaultTTL(ttl time.Duration) Option {
+	return optionFunc(func(c *config) {
+		c.defaultTTL = ttl
+	})
+}
+
+// New creates a new generic cache instance with functional options.
+//
+// ja: New は関数オプションを使用して新しいジェネリックキャッシュインスタンスを作成します
+func New[K comparable, V any](opts ...Option) Cache[K, V] {
+	// Default configuration
+	cfg := &config{
+		maxCapacity:    100, //nolint:mnd
+		evictionPolicy: LRU,
+		defaultTTL:     0, // No TTL by default // ja: デフォルトは無期限
 	}
 
-	if opts.MaxCapacity <= 0 {
-		opts.MaxCapacity = 1000 //nolint:mnd
+	// Apply options
+	for _, opt := range opts {
+		opt.apply(cfg)
 	}
 
-	switch opts.EvictionPolicy {
+	// Create cache based on eviction policy
+	switch cfg.evictionPolicy {
 	case LFU:
-		return newLFUCacheG[K, V](opts)
+		return newLFUCacheG[K, V](cfg)
 	case LRU:
 		fallthrough
 	default:
-		return newLRUCacheG[K, V](opts)
+		return newLRUCacheG[K, V](cfg)
 	}
 }

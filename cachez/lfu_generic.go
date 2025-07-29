@@ -32,14 +32,14 @@ type lfuEntryG[K comparable, V any] struct {
 // newLFUCacheG creates a new generic LFU cache instance.
 //
 // ja: newLFUCacheG は新しいジェネリック版 LFU キャッシュインスタンスを作成します
-func newLFUCacheG[K comparable, V any](opts *Options) *lfuCacheG[K, V] {
+func newLFUCacheG[K comparable, V any](cfg *config) *lfuCacheG[K, V] {
 	mh := &minHeapG[K, V]{}
 	heap.Init(mh)
 
 	return &lfuCacheG[K, V]{
 		mu:          sync.RWMutex{},
-		maxCapacity: opts.MaxCapacity,
-		defaultTTL:  opts.DefaultTTL,
+		maxCapacity: cfg.maxCapacity,
+		defaultTTL:  cfg.defaultTTL,
 		items:       make(map[K]*lfuEntryG[K, V]),
 		freqHeap:    mh,
 	}

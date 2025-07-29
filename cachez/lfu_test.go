@@ -10,10 +10,10 @@ import (
 func TestLFU_EvictionOrder(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](&cachez.Options{
-		MaxCapacity:    5,
-		EvictionPolicy: cachez.LFU,
-	})
+	cache := cachez.New[string, string](
+		cachez.WithMaxCapacity(5),
+		cachez.WithEvictionPolicy(cachez.LFU),
+	)
 
 	// 5つの要素を追加
 	for i := 1; i <= 5; i++ {
@@ -56,7 +56,7 @@ func TestLFU_EvictionOrder(t *testing.T) {
 	// 頻度の高いキーは存在するはず
 	for _, key := range []string{"key1", "key2", "key3"} {
 		if _, ok := cache.Get(key); !ok {
-			t.Errorf("%s should still exist", key)
+			t.Errorf("❌: %s should still exist", key)
 		}
 	}
 }
@@ -64,10 +64,10 @@ func TestLFU_EvictionOrder(t *testing.T) {
 func TestLFU_UpdateIncreasesFrequency(t *testing.T) {
 	t.Parallel()
 
-	cache := cachez.New[string, string](&cachez.Options{
-		MaxCapacity:    3,
-		EvictionPolicy: cachez.LFU,
-	})
+	cache := cachez.New[string, string](
+		cachez.WithMaxCapacity(3),
+		cachez.WithEvictionPolicy(cachez.LFU),
+	)
 
 	cache.Set("key1", "value1")
 	cache.Set("key2", "value2")
@@ -86,6 +86,6 @@ func TestLFU_UpdateIncreasesFrequency(t *testing.T) {
 	}
 
 	if val, ok := cache.Get("key1"); !ok || val != "updated" {
-		t.Errorf("key1 should exist with updated value, got %v", val)
+		t.Errorf("❌: key1 should exist with updated value, got %v", val)
 	}
 }

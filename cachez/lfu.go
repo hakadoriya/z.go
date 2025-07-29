@@ -32,14 +32,14 @@ type lfuEntry struct {
 // newLFUCache creates a new LFU cache instance.
 //
 // ja: newLFUCache は新しい LFU キャッシュインスタンスを作成します
-func newLFUCache(opts *Options) *lfuCache {
+func newLFUCache(cfg *config) *lfuCache {
 	mh := &minHeap{}
 	heap.Init(mh)
 
 	return &lfuCache{
 		mu:          sync.RWMutex{},
-		maxCapacity: opts.MaxCapacity,
-		defaultTTL:  opts.DefaultTTL,
+		maxCapacity: cfg.maxCapacity,
+		defaultTTL:  cfg.defaultTTL,
 		items:       make(map[string]*lfuEntry),
 		freqHeap:    mh,
 	}
