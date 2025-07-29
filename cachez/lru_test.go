@@ -3,6 +3,7 @@ package cachez_test
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hakadoriya/z.go/cachez"
 )
@@ -65,5 +66,38 @@ func TestLRU_UpdateMovesToFront(t *testing.T) {
 
 	if val, ok := cache.Get("key1"); !ok || val != "updated" {
 		t.Errorf("❌: key1 should exist with updated value, got %v", val)
+	}
+}
+
+func TestLRU_SetWithTTL_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	cache := cachez.New[string, string](
+		cachez.WithMaxCapacity(5),
+		cachez.WithEvictionPolicy(cachez.LRU),
+	)
+
+	// Test updating existing entry with TTL = 0
+	cache.SetWithTTL("key1", "value1", 100*time.Millisecond)
+	cache.SetWithTTL("key1", "updated", 0) // Remove TTL
+
+	// Wait longer than original TTL
+	time.Sleep(150 * time.Millisecond)
+
+	// Should still exist since TTL was removed
+	if val, ok := cache.Get("key1"); !ok || val != "updated" {
+		t.Error("❌: key1 should not expire after TTL was removed")
+	}
+
+	// Test updating existing entry without TTL to have TTL
+	cache.Set("key2", "value2") // No TTL
+	cache.SetWithTTL("key2", "updated2", 50*time.Millisecond)
+
+	// Wait for expiration
+	time.Sleep(100 * time.Millisecond)
+
+	// Should be expired
+	if _, ok := cache.Get("key2"); ok {
+		t.Error("❌: key2 should have expired")
 	}
 }
