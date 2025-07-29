@@ -6,26 +6,26 @@ import (
 	"time"
 )
 
-// lruCache is a cache implementing the LRU eviction policy.
+// lruCacheG is a generic cache implementing the LRU eviction policy.
 //
-// ja: lruCache は LRU エビクションポリシーを実装したキャッシュです
-type lruCache struct {
+// ja: lruCacheG はジェネリック版の LRU エビクションポリシーを実装したキャッシュです
+type lruCacheG[K comparable, V any] struct {
 	mu          sync.RWMutex
 	maxCapacity int
 	defaultTTL  time.Duration
-	items       map[string]*list.Element
+	items       map[K]*list.Element
 	evictList   *list.List
 }
 
-// newLRUCache creates a new LRU cache instance.
+// newLRUCacheG creates a new generic LRU cache instance.
 //
-// ja: newLRUCache は新しい LRU キャッシュインスタンスを作成します
-func newLRUCache(cfg *config) *lruCache {
-	return &lruCache{
+// ja: newLRUCacheG は新しいジェネリック版 LRU キャッシュインスタンスを作成します
+func newLRUCacheG[K comparable, V any](cfg *config) *lruCacheG[K, V] {
+	return &lruCacheG[K, V]{
 		mu:          sync.RWMutex{},
 		maxCapacity: cfg.maxCapacity,
 		defaultTTL:  cfg.defaultTTL,
-		items:       make(map[string]*list.Element),
+		items:       make(map[K]*list.Element),
 		evictList:   list.New(),
 	}
 }
@@ -33,23 +33,24 @@ func newLRUCache(cfg *config) *lruCache {
 // Get retrieves the value for the specified key.
 //
 // ja: Get は指定されたキーの値を取得します
-func (c *lruCache) Get(key string) (interface{}, bool) {
+func (c *lruCacheG[K, V]) Get(key K) (V, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	var zero V
 	elem, exists := c.items[key]
 	if !exists {
-		return nil, false
+		return zero, false
 	}
 
-	ent, ok := elem.Value.(*entry)
+	ent, ok := elem.Value.(*entryG[K, V])
 	if !ok {
-		return nil, false
+		return zero, false
 	}
 
 	if ent.isExpired() {
 		c.removeElement(elem)
-		return nil, false
+		return zero, false
 	}
 
 	// Move accessed entry to front
@@ -62,21 +63,21 @@ func (c *lruCache) Get(key string) (interface{}, bool) {
 // Set stores the specified key and value in the cache.
 //
 // ja: Set は指定されたキーと値をキャッシュに保存します
-func (c *lruCache) Set(key string, value interface{}) {
+func (c *lruCacheG[K, V]) Set(key K, value V) {
 	c.SetWithTTL(key, value, c.defaultTTL)
 }
 
 // SetWithTTL stores the specified key and value with TTL in the cache.
 //
 // ja: SetWithTTL は指定されたキーと値を TTL 付きでキャッシュに保存します
-func (c *lruCache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
+func (c *lruCacheG[K, V]) SetWithTTL(key K, value V, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	// Check for existing entry
 	if elem, exists := c.items[key]; exists {
 		// Update existing entry
-		ent, ok := elem.Value.(*entry)
+		ent, ok := elem.Value.(*entryG[K, V])
 		if !ok {
 			return
 		}
@@ -94,7 +95,7 @@ func (c *lruCache) SetWithTTL(key string, value interface{}, ttl time.Duration) 
 	}
 
 	// Create new entry
-	ent := &entry{
+	ent := &entryG[K, V]{
 		key:        key,
 		value:      value,
 		expiration: time.Time{},
@@ -117,7 +118,7 @@ func (c *lruCache) SetWithTTL(key string, value interface{}, ttl time.Duration) 
 // Delete removes the specified key from the cache.
 //
 // ja: Delete は指定されたキーをキャッシュから削除します
-func (c *lruCache) Delete(key string) {
+func (c *lruCacheG[K, V]) Delete(key K) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -129,18 +130,18 @@ func (c *lruCache) Delete(key string) {
 // Clear removes all entries from the cache.
 //
 // ja: Clear はキャッシュの全エントリを削除します
-func (c *lruCache) Clear() {
+func (c *lruCacheG[K, V]) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.items = make(map[string]*list.Element)
+	c.items = make(map[K]*list.Element)
 	c.evictList = list.New()
 }
 
 // Size returns the current number of cache entries.
 //
 // ja: Size は現在のキャッシュエントリ数を返します
-func (c *lruCache) Size() int {
+func (c *lruCacheG[K, V]) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -150,7 +151,7 @@ func (c *lruCache) Size() int {
 // evictOldest removes the oldest entry.
 //
 // ja: evictOldest は最も古いエントリを削除します
-func (c *lruCache) evictOldest() {
+func (c *lruCacheG[K, V]) evictOldest() {
 	elem := c.evictList.Back()
 	if elem != nil {
 		c.removeElement(elem)
@@ -160,10 +161,10 @@ func (c *lruCache) evictOldest() {
 // removeElement removes an entry from the list and map.
 //
 // ja: removeElement はリストとマップからエントリを削除します
-func (c *lruCache) removeElement(elem *list.Element) {
+func (c *lruCacheG[K, V]) removeElement(elem *list.Element) {
 	c.evictList.Remove(elem)
 
-	ent, ok := elem.Value.(*entry)
+	ent, ok := elem.Value.(*entryG[K, V])
 	if !ok {
 		return
 	}

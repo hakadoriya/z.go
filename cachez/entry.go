@@ -4,12 +4,12 @@ import (
 	"time"
 )
 
-// entry represents a cache entry struct.
+// entryG represents a generic cache entry struct.
 //
-// ja: entry はキャッシュエントリを表す構造体です
-type entry struct {
-	key        string
-	value      interface{}
+// ja: entryG はジェネリックキャッシュエントリを表す構造体です
+type entryG[K comparable, V any] struct {
+	key        K
+	value      V
 	expiration time.Time
 	// Access frequency for LFU
 	//
@@ -20,7 +20,7 @@ type entry struct {
 // isExpired checks whether the entry has expired.
 //
 // ja: isExpired はエントリが期限切れかどうかをチェックします
-func (e *entry) isExpired() bool {
+func (e *entryG[K, V]) isExpired() bool {
 	if e.expiration.IsZero() {
 		return false
 	}

@@ -6,22 +6,22 @@ import (
 	"time"
 )
 
-// lfuCache is a cache implementing the LFU eviction policy.
+// lfuCacheG is a generic cache implementing the LFU eviction policy.
 //
-// ja: lfuCache は LFU エビクションポリシーを実装したキャッシュです
-type lfuCache struct {
+// ja: lfuCacheG はジェネリック版の LFU エビクションポリシーを実装したキャッシュです
+type lfuCacheG[K comparable, V any] struct {
 	mu          sync.RWMutex
 	maxCapacity int
 	defaultTTL  time.Duration
-	items       map[string]*lfuEntry
-	freqHeap    *minHeap
+	items       map[K]*lfuEntryG[K, V]
+	freqHeap    *minHeapG[K, V]
 }
 
-// lfuEntry represents an LFU cache entry.
+// lfuEntryG represents a generic LFU cache entry.
 //
-// ja: lfuEntry は LFU キャッシュのエントリです
-type lfuEntry struct {
-	entry
+// ja: lfuEntryG はジェネリック版 LFU キャッシュのエントリです
+type lfuEntryG[K comparable, V any] struct {
+	entryG[K, V]
 
 	// Index in the heap
 	//
@@ -29,18 +29,18 @@ type lfuEntry struct {
 	index int
 }
 
-// newLFUCache creates a new LFU cache instance.
+// newLFUCacheG creates a new generic LFU cache instance.
 //
-// ja: newLFUCache は新しい LFU キャッシュインスタンスを作成します
-func newLFUCache(cfg *config) *lfuCache {
-	mh := &minHeap{}
+// ja: newLFUCacheG は新しいジェネリック版 LFU キャッシュインスタンスを作成します
+func newLFUCacheG[K comparable, V any](cfg *config) *lfuCacheG[K, V] {
+	mh := &minHeapG[K, V]{}
 	heap.Init(mh)
 
-	return &lfuCache{
+	return &lfuCacheG[K, V]{
 		mu:          sync.RWMutex{},
 		maxCapacity: cfg.maxCapacity,
 		defaultTTL:  cfg.defaultTTL,
-		items:       make(map[string]*lfuEntry),
+		items:       make(map[K]*lfuEntryG[K, V]),
 		freqHeap:    mh,
 	}
 }
@@ -48,13 +48,14 @@ func newLFUCache(cfg *config) *lfuCache {
 // Get retrieves the value for the specified key.
 //
 // ja: Get は指定されたキーの値を取得します
-func (c *lfuCache) Get(key string) (interface{}, bool) {
+func (c *lfuCacheG[K, V]) Get(key K) (V, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	var zero V
 	ent, exists := c.items[key]
 	if !exists {
-		return nil, false
+		return zero, false
 	}
 
 	// TTL check
@@ -62,7 +63,7 @@ func (c *lfuCache) Get(key string) (interface{}, bool) {
 	// ja: TTL チェック
 	if ent.isExpired() {
 		c.removeEntry(key)
-		return nil, false
+		return zero, false
 	}
 
 	// Increase access frequency
@@ -77,14 +78,14 @@ func (c *lfuCache) Get(key string) (interface{}, bool) {
 // Set stores the specified key and value in the cache.
 //
 // ja: Set は指定されたキーと値をキャッシュに保存します
-func (c *lfuCache) Set(key string, value interface{}) {
+func (c *lfuCacheG[K, V]) Set(key K, value V) {
 	c.SetWithTTL(key, value, c.defaultTTL)
 }
 
 // SetWithTTL stores the specified key and value with TTL in the cache.
 //
 // ja: SetWithTTL は指定されたキーと値を TTL 付きでキャッシュに保存します
-func (c *lfuCache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
+func (c *lfuCacheG[K, V]) SetWithTTL(key K, value V, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -115,8 +116,8 @@ func (c *lfuCache) SetWithTTL(key string, value interface{}, ttl time.Duration) 
 
 	// Create new entry
 	// ja: 新規エントリを作成
-	ent := &lfuEntry{
-		entry: entry{
+	ent := &lfuEntryG[K, V]{
+		entryG: entryG[K, V]{
 			key:        key,
 			value:      value,
 			frequency:  1,
@@ -137,7 +138,7 @@ func (c *lfuCache) SetWithTTL(key string, value interface{}, ttl time.Duration) 
 // Delete removes the specified key from the cache.
 //
 // ja: Delete は指定されたキーをキャッシュから削除します
-func (c *lfuCache) Delete(key string) {
+func (c *lfuCacheG[K, V]) Delete(key K) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -149,12 +150,12 @@ func (c *lfuCache) Delete(key string) {
 // Clear removes all entries from the cache.
 //
 // ja: Clear はキャッシュの全エントリを削除します
-func (c *lfuCache) Clear() {
+func (c *lfuCacheG[K, V]) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.items = make(map[string]*lfuEntry)
-	mh := &minHeap{}
+	c.items = make(map[K]*lfuEntryG[K, V])
+	mh := &minHeapG[K, V]{}
 	heap.Init(mh)
 	c.freqHeap = mh
 }
@@ -162,7 +163,7 @@ func (c *lfuCache) Clear() {
 // Size returns the current number of cache entries.
 //
 // ja: Size は現在のキャッシュエントリ数を返します
-func (c *lfuCache) Size() int {
+func (c *lfuCacheG[K, V]) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -172,11 +173,11 @@ func (c *lfuCache) Size() int {
 // evictLeastFrequent removes the least frequently used entry.
 //
 // ja: evictLeastFrequent は最も使用頻度の低いエントリを削除します
-func (c *lfuCache) evictLeastFrequent() {
+func (c *lfuCacheG[K, V]) evictLeastFrequent() {
 	if c.freqHeap.Len() > 0 {
 		entInterface := heap.Pop(c.freqHeap)
 
-		ent, ok := entInterface.(*lfuEntry)
+		ent, ok := entInterface.(*lfuEntryG[K, V])
 		if !ok {
 			return
 		}
@@ -188,20 +189,20 @@ func (c *lfuCache) evictLeastFrequent() {
 // removeEntry removes an entry.
 //
 // ja: removeEntry はエントリを削除します
-func (c *lfuCache) removeEntry(key string) {
+func (c *lfuCacheG[K, V]) removeEntry(key K) {
 	ent := c.items[key]
 	heap.Remove(c.freqHeap, ent.index)
 	delete(c.items, key)
 }
 
-// minHeap is an implementation of a min-heap.
+// minHeapG is a generic implementation of a min-heap.
 //
-// ja: minHeap は最小ヒープの実装です
-type minHeap []*lfuEntry
+// ja: minHeapG はジェネリック版最小ヒープの実装です
+type minHeapG[K comparable, V any] []*lfuEntryG[K, V]
 
-func (h *minHeap) Len() int { return len(*h) }
+func (h *minHeapG[K, V]) Len() int { return len(*h) }
 
-func (h *minHeap) Less(i, j int) bool {
+func (h *minHeapG[K, V]) Less(i, j int) bool {
 	// When frequencies are equal, prioritize older entries
 	// ja: 頻度が同じ場合は、より古いエントリを優先
 	if (*h)[i].frequency == (*h)[j].frequency {
@@ -211,14 +212,14 @@ func (h *minHeap) Less(i, j int) bool {
 	return (*h)[i].frequency < (*h)[j].frequency
 }
 
-func (h *minHeap) Swap(i, j int) {
+func (h *minHeapG[K, V]) Swap(i, j int) {
 	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
 	(*h)[i].index = i
 	(*h)[j].index = j
 }
 
-func (h *minHeap) Push(x interface{}) {
-	ent, ok := x.(*lfuEntry)
+func (h *minHeapG[K, V]) Push(x interface{}) {
+	ent, ok := x.(*lfuEntryG[K, V])
 	if !ok {
 		return
 	}
@@ -227,7 +228,7 @@ func (h *minHeap) Push(x interface{}) {
 	*h = append(*h, ent)
 }
 
-func (h *minHeap) Pop() interface{} {
+func (h *minHeapG[K, V]) Pop() interface{} {
 	old := *h
 	n := len(old)
 	ent := old[n-1]
