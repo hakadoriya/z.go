@@ -44,7 +44,7 @@ func (c *lruCacheG[K, V]) Get(key K) (V, bool) {
 	}
 
 	ent, ok := elem.Value.(*entryG[K, V])
-	if !ok {
+	if !ok || _testAssert_lruCacheG_Get {
 		return zero, false
 	}
 
@@ -78,7 +78,7 @@ func (c *lruCacheG[K, V]) SetWithTTL(key K, value V, ttl time.Duration) {
 	if elem, exists := c.items[key]; exists {
 		// Update existing entry
 		ent, ok := elem.Value.(*entryG[K, V])
-		if !ok {
+		if !ok || _testAssert_lruCacheG_SetWithTTL {
 			return
 		}
 
@@ -165,9 +165,15 @@ func (c *lruCacheG[K, V]) removeElement(elem *list.Element) {
 	c.evictList.Remove(elem)
 
 	ent, ok := elem.Value.(*entryG[K, V])
-	if !ok {
+	if !ok || _testAssert_lruCacheG_removeElement {
 		return
 	}
 
 	delete(c.items, ent.key)
 }
+
+var (
+	_testAssert_lruCacheG_Get           bool
+	_testAssert_lruCacheG_SetWithTTL    bool
+	_testAssert_lruCacheG_removeElement bool
+)

@@ -2,9 +2,13 @@ package cachez
 
 import (
 	"container/heap"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 )
+
+var ErrAssertionFailed = errors.New("assertion failed")
 
 // lfuCacheG is a generic cache implementing the LFU eviction policy.
 //
@@ -178,8 +182,8 @@ func (c *lfuCacheG[K, V]) evictLeastFrequent() {
 		entInterface := heap.Pop(c.freqHeap)
 
 		ent, ok := entInterface.(*lfuEntryG[K, V])
-		if !ok {
-			return
+		if !ok || _testAssert_lfuCacheG_evictLeastFrequent {
+			panic(fmt.Errorf("x is not a *lfuEntryG[K, V]: %w", ErrAssertionFailed))
 		}
 
 		delete(c.items, ent.key)
@@ -220,8 +224,8 @@ func (h *minHeapG[K, V]) Swap(i, j int) {
 
 func (h *minHeapG[K, V]) Push(x interface{}) {
 	ent, ok := x.(*lfuEntryG[K, V])
-	if !ok {
-		return
+	if !ok || _testAssert_minHeapG_Push {
+		panic(fmt.Errorf("x is not a *lfuEntryG[K, V]: %w", ErrAssertionFailed))
 	}
 
 	ent.index = len(*h)
@@ -237,3 +241,8 @@ func (h *minHeapG[K, V]) Pop() interface{} {
 
 	return ent
 }
+
+var (
+	_testAssert_lfuCacheG_evictLeastFrequent bool
+	_testAssert_minHeapG_Push                bool
+)
