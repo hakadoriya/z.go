@@ -65,7 +65,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: actions/cache/restore for versenv
         uses: actions/cache/restore@v4
         id: cache-restore-versenv
