@@ -2,13 +2,10 @@ package cachez
 
 import (
 	"container/heap"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
 )
-
-var ErrAssertionFailed = errors.New("assertion failed")
 
 // lfuCacheG is a generic cache implementing the LFU eviction policy.
 //
@@ -240,9 +237,3 @@ func (h *minHeapG[K, V]) Pop() interface{} {
 
 	return ent
 }
-
-//nolint:gochecknoglobals,revive
-var (
-	_testAssert_lfuCacheG_evictLeastFrequent bool
-	_testAssert_minHeapG_Push                bool
-)
