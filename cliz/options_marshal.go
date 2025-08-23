@@ -145,13 +145,13 @@ func MarshalOptions(v interface{}, opts ...MarshalOptionsOption) (options []Opti
 		}
 
 		tagValue := stringz.TrimLeftSpace(field.Tag.Get(cfg.tagKey))
-		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, tagValue=%s", valType, field.Name, cfg.tagKey, tagValue)) //nolint:noctx
+		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, tagValue=%s", valType, field.Name, cfg.tagKey, tagValue))
 		if tagValue == "" {
 			continue
 		}
 
 		optName, opts := parseTagValue(tagValue)
-		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, optName=%s, opts=%v", valType, field.Name, cfg.tagKey, optName, opts)) //nolint:noctx
+		Logger.Debug(fmt.Sprintf("type=%s: field=%s: tag=%s, optName=%s, opts=%v", valType, field.Name, cfg.tagKey, optName, opts))
 		if optName == "" {
 			return nil, fmt.Errorf("type=%s: field=%s: tag=%s: tagValue=%s: %w", valType, field.Name, cfg.tagKey, tagValue, ErrInvalidTagValue)
 		}
@@ -298,7 +298,7 @@ func optsContainsEnvKey(c *marshalConfig, opts []string) (envKey string, hasEnv 
 
 func optsContainsDefaultValue(c *marshalConfig, opts []string) (defaultValue string, hasDefault bool) {
 	for _, opt := range opts {
-		Logger.Debug("opt=" + opt) //nolint:noctx
+		Logger.Debug("opt=" + opt)
 		if strings.HasPrefix(opt, c.defaultKey+"=") {
 			return strings.CutPrefix(opt, c.defaultKey+"=")
 		}
@@ -329,7 +329,7 @@ func optsContainsHidden(c *marshalConfig, opts []string) bool {
 
 func optsContainsDescription(c *marshalConfig, opts []string) (description string, hasDescription bool) {
 	for _, opt := range opts {
-		Logger.Debug("opt=" + opt) //nolint:noctx
+		Logger.Debug("opt=" + opt)
 		if strings.HasPrefix(opt, c.descriptionKey+"=") {
 			return strings.CutPrefix(opt, c.descriptionKey+"=")
 		}
