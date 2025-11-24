@@ -65,7 +65,7 @@ jobs:
     if: ${{ needs.paths-filter.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: actions/cache/restore for versenv
         uses: actions/cache/restore@v4
         id: cache-restore-versenv
@@ -92,7 +92,7 @@ jobs:
           # Setup versenv
           direnv allow ${{ env.WORKDIR }}
           make versenv
-      - uses: actions/setup-go@v5 # ref. https://github.com/actions/setup-go#usage
+      - uses: actions/setup-go@v6 # ref. https://github.com/actions/setup-go#usage
         id: setup-go
         with:
           cache: false
