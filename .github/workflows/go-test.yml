@@ -65,9 +65,9 @@ jobs:
     if: ${{ needs.paths-filter.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: actions/cache/restore for versenv
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-restore-versenv
         with:
           key: versenv-${{ runner.os }}-${{ hashFiles('**/.versenv.env') }}
@@ -92,7 +92,7 @@ jobs:
           # Setup versenv
           direnv allow ${{ env.WORKDIR }}
           make versenv
-      - uses: actions/setup-go@v5 # ref. https://github.com/actions/setup-go#usage
+      - uses: actions/setup-go@v6 # ref. https://github.com/actions/setup-go#usage
         id: setup-go
         with:
           cache: false
@@ -104,7 +104,7 @@ jobs:
           echo "GOVERSION=$(go version | cut -d' ' -f3)" >> "$GITHUB_OUTPUT"
           echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
       - name: actions/cache/restore for go
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: cache-restore-go
         with:
           key: ${{ runner.os }}-go-${{ steps.golang-info.outputs.GOVERSION }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
@@ -160,7 +160,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ env.WORKDIR }}/coverage.txt
       - name: actions/cache/save for go
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: always() && ${{ steps.cache-restore-go.outputs.cache-matched-key != steps.cache-restore-go.outputs.cache-primary-key }}
         with:
           key: ${{ steps.cache-restore-go.outputs.cache-primary-key }}
@@ -168,7 +168,7 @@ jobs:
             ~/go/pkg/mod
             ${{ steps.golang-info.outputs.GOCACHE }}
       - name: actions/cache/save for versenv
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: always() && ${{ steps.cache-restore-versenv.outputs.cache-matched-key != steps.cache-restore-versenv.outputs.cache-primary-key }}
         with:
           key: ${{ steps.cache-restore-versenv.outputs.cache-primary-key }}
